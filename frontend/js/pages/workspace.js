@@ -10,35 +10,38 @@
   function render() {
     const user = AuthStore.getUser() || {};
     return `
-      <div class="space-y-6 fade-in">
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-dark-800 border border-dark-500 rounded-xl p-4">
-            <div class="text-xs text-gray-500">当前身份</div>
-            <div class="text-xl font-semibold text-gray-100 mt-1">${_escape(user.username || "-")}</div>
-            <div class="text-sm text-blue-300 mt-2">${_escape(user.role || "member")}</div>
+      <div class="page-content fade-in">
+        <section class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900">欢迎回来，${_escape(user.username || '用户')}</h2>
+              <p class="text-gray-500 mt-1">查看你的任务与项目进度</p>
+            </div>
           </div>
-          <div class="bg-dark-800 border border-dark-500 rounded-xl p-4">
-            <div class="text-xs text-gray-500">我的项目</div>
-            <div id="workspace-project-count" class="text-2xl font-semibold text-gray-100 mt-2">0</div>
-          </div>
-          <div class="bg-dark-800 border border-dark-500 rounded-xl p-4">
-            <div class="text-xs text-gray-500">待我处理</div>
-            <div id="workspace-task-count" class="text-2xl font-semibold text-gray-100 mt-2">0</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="card">
+              <div class="text-sm text-gray-500 mb-1">我的项目</div>
+              <div id="workspace-project-count" class="text-3xl font-bold text-gray-900">0</div>
+            </div>
+            <div class="card">
+              <div class="text-sm text-gray-500 mb-1">待我处理</div>
+              <div id="workspace-task-count" class="text-3xl font-bold text-gray-900">0</div>
+            </div>
           </div>
         </section>
 
-        <section>
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold text-gray-100">任务看板</h2>
-            <button id="workspace-refresh" class="px-3 py-1.5 rounded-lg bg-dark-600 hover:bg-dark-500 text-sm text-gray-200">刷新</button>
+        <section class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">我的任务</h2>
+            <button id="workspace-refresh" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 transition-colors">刷新</button>
           </div>
           <div id="workspace-tasks" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
         </section>
 
         <section>
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold text-gray-100">快速进入项目</h2>
-            <a href="#/project/new/script" id="workspace-create-tip" class="text-sm text-blue-300">去剧本工位创建项目</a>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">我的项目</h2>
+            <a href="#/project/new/script" class="text-sm text-brand-600 hover:text-brand-700 font-medium">创建新项目</a>
           </div>
           <div id="workspace-projects" class="grid grid-cols-1 lg:grid-cols-3 gap-4"></div>
         </section>
@@ -72,10 +75,10 @@
     if (projectEl) {
       projectEl.innerHTML = state.projects.length
         ? state.projects.map((p) => `
-            <article class="bg-dark-800 border border-dark-500 rounded-xl p-4 card-hover">
-              <h3 class="font-semibold text-gray-100 truncate">${_escape(p.title)}</h3>
+            <article class="card">
+              <h3 class="font-semibold text-gray-900 truncate">${_escape(p.title)}</h3>
               <p class="text-xs text-gray-500 mt-1">状态：${_escape(p.status)}</p>
-              <a class="inline-block mt-3 text-sm text-blue-300" href="#/project/${p.id}">进入项目</a>
+              <a class="inline-block mt-3 text-sm text-brand-600 hover:text-brand-700 font-medium" href="#/project/${p.id}">进入项目 →</a>
             </article>
           `).join("")
         : `<div class="text-sm text-gray-500">暂无项目</div>`;

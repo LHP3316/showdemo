@@ -14,16 +14,16 @@
     } = options;
 
     hide();
-    const accentColor = type === "danger" ? "#ef4444" : type === "warning" ? "#f59e0b" : "#3b82f6";
+    const accentColor = type === "danger" ? "#dc2626" : type === "warning" ? "#d97706" : "#2563eb";
     const overlay = document.createElement("div");
     overlay.id = "modal-overlay";
     overlay.className = "modal-overlay";
     overlay.innerHTML = `
-      <div class="bg-dark-800 rounded-xl border border-dark-500 w-full max-w-md mx-4 p-5">
-        <h3 class="text-lg font-semibold text-gray-100 mb-3">${title}</h3>
-        <div class="text-sm text-gray-400 leading-relaxed mb-4">${content}</div>
+      <div class="bg-white rounded-xl border border-gray-200 w-full max-w-md mx-4 p-5 shadow-lg">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">${title}</h3>
+        <div class="text-sm text-gray-600 leading-relaxed mb-4">${content}</div>
         <div class="flex justify-end gap-3">
-          ${showCancel ? `<button id="modal-cancel" class="px-4 py-2 rounded-lg text-sm text-gray-300 bg-dark-600 hover:bg-dark-500">${cancelText}</button>` : ""}
+          ${showCancel ? `<button id="modal-cancel" class="px-4 py-2 rounded-lg text-sm text-gray-700 bg-gray-100 hover:bg-gray-200">${cancelText}</button>` : ""}
           <button id="modal-confirm" class="px-4 py-2 rounded-lg text-sm text-white" style="background:${accentColor}">${confirmText}</button>
         </div>
       </div>`;

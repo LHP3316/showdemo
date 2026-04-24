@@ -21,20 +21,19 @@
   function render(currentStep) {
     const currentIndex = Math.max(STEPS.indexOf(currentStep), 0);
     return `
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="step-bar">
         ${STEPS.map((step, index) => {
           const active = index === currentIndex;
           const done = index < currentIndex;
+          const state = active ? 'active' : done ? 'done' : 'pending';
           return `
-            <div class="flex items-center gap-2">
-              <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center ${
-                active ? "bg-blue-500 text-white" : done ? "bg-green-500 text-white" : "bg-dark-600 text-gray-400"
-              }">${index + 1}</div>
-              <span class="text-xs ${active ? "text-blue-300" : "text-gray-400"}">${STEP_LABEL[step]}</span>
-              ${index < STEPS.length - 1 ? '<div class="w-6 h-px bg-dark-500"></div>' : ""}
+            <div class="step-item">
+              <div class="step-dot ${state}">${done ? '✓' : index + 1}</div>
+              <span class="step-label ${state}">${STEP_LABEL[step]}</span>
             </div>
+            ${index < STEPS.length - 1 ? '<div class="step-connector"></div>' : ''}
           `;
-        }).join("")}
+        }).join('')}
       </div>
     `;
   }

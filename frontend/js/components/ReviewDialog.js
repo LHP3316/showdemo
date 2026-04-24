@@ -5,8 +5,8 @@
   function open({ title, confirmText, type = "info", onSubmit }) {
     const content = `
       <div class="space-y-2">
-        <p class="text-sm text-gray-400">请填写审核意见：</p>
-        <textarea id="review-dialog-comment" class="textarea-dark min-h-[120px]" placeholder="请输入意见"></textarea>
+        <p class="text-sm text-gray-600">请填写审核意见：</p>
+        <textarea id="review-dialog-comment" class="textarea-field min-h-[120px]" placeholder="请输入意见"></textarea>
       </div>
     `;
     Modal.show({

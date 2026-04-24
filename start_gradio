@@ -7,10 +7,31 @@ BACKEND_DIR="${ROOT_DIR}/backend"
 
 cd "${BACKEND_DIR}"
 
-if command -v conda >/dev/null 2>&1; then
-  echo "Using conda env: video"
-  exec conda run -n video python gradio_app.py
+PY_BIN="python3"
+if ! command -v "${PY_BIN}" >/dev/null 2>&1; then
+  PY_BIN="python"
 fi
 
-echo "Using current python environment"
-exec python3 gradio_app.py
+if ! command -v "${PY_BIN}" >/dev/null 2>&1; then
+  echo "未找到 python3/python，请先安装 Python 或激活环境。"
+  exit 1
+fi
+
+if "${PY_BIN}" -c "import gradio" >/dev/null 2>&1; then
+  echo "Using current python environment"
+  exec "${PY_BIN}" gradio_app.py
+fi
+
+if command -v conda >/dev/null 2>&1; then
+  if conda run -n video python -c "import gradio" >/dev/null 2>&1; then
+    echo "Using conda env: video"
+    exec conda run -n video python gradio_app.py
+  fi
+fi
+
+echo "当前环境缺少 gradio。"
+echo "请执行："
+echo "  cd /mnt/d/Project/showdemo/backend"
+echo "  python -m pip install -r requirements.txt"
+echo "然后重新运行 ./start_gradio"
+exit 1

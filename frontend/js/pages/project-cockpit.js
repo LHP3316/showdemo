@@ -21,39 +21,39 @@
       `;
     }
     return `
-      <div class="space-y-5 fade-in">
-        <section class="bg-dark-800 border border-dark-500 rounded-xl p-5">
-          <div class="flex items-start justify-between gap-4">
+      <div class="page-content space-y-6 fade-in">
+        <section class="card">
+          <div class="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h2 id="cockpit-title" class="text-xl font-semibold text-gray-100">项目加载中...</h2>
+              <h2 id="cockpit-title" class="text-2xl font-bold text-gray-900">项目加载中...</h2>
               <p id="cockpit-meta" class="text-sm text-gray-500 mt-1"></p>
             </div>
             <div id="cockpit-assignee"></div>
           </div>
-          <div id="cockpit-stepper" class="mt-4"></div>
+          <div id="cockpit-stepper"></div>
         </section>
 
         <section class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <article class="bg-dark-800 border border-dark-500 rounded-xl p-4">
-            <h3 class="text-sm text-gray-300 mb-2">当前进度</h3>
-            <p id="cockpit-progress" class="text-2xl text-gray-100 font-semibold">-</p>
+          <article class="card">
+            <h3 class="text-sm text-gray-500 mb-2">当前进度</h3>
+            <p id="cockpit-progress" class="text-2xl text-gray-900 font-bold">-</p>
             <div class="mt-4 flex gap-2">
-              <a id="cockpit-link-script" class="px-3 py-1.5 rounded bg-dark-600 hover:bg-dark-500 text-sm text-gray-200" href="#">剧本工位</a>
-              <a id="cockpit-link-board" class="px-3 py-1.5 rounded bg-dark-600 hover:bg-dark-500 text-sm text-gray-200" href="#">分镜工位</a>
+              <a id="cockpit-link-script" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 transition-colors" href="#">剧本工位</a>
+              <a id="cockpit-link-board" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 transition-colors" href="#">分镜工位</a>
             </div>
           </article>
-          <article class="bg-dark-800 border border-dark-500 rounded-xl p-4">
-            <h3 class="text-sm text-gray-300 mb-2">阻塞提醒</h3>
-            <ul id="cockpit-blockers" class="text-sm text-gray-400 space-y-1"></ul>
+          <article class="card">
+            <h3 class="text-sm text-gray-500 mb-2">阻塞提醒</h3>
+            <ul id="cockpit-blockers" class="text-sm text-gray-600 space-y-1"></ul>
           </article>
-          <article class="bg-dark-800 border border-dark-500 rounded-xl p-4">
-            <h3 class="text-sm text-gray-300 mb-2">资产统计</h3>
-            <p id="cockpit-assets" class="text-sm text-gray-300"></p>
+          <article class="card">
+            <h3 class="text-sm text-gray-500 mb-2">资产统计</h3>
+            <p id="cockpit-assets" class="text-sm text-gray-700"></p>
           </article>
         </section>
 
-        <section class="bg-dark-800 border border-dark-500 rounded-xl p-4">
-          <h3 class="text-sm text-gray-300 mb-3">流程时间线</h3>
+        <section class="card">
+          <h3 class="text-sm text-gray-500 mb-3">流程时间线</h3>
           <div id="cockpit-timeline"></div>
         </section>
       </div>
@@ -111,8 +111,8 @@
       if (!state.scenes.length) blockers.push("尚未生成分镜");
       if (!state.scenes.some((s) => s.video_url)) blockers.push("暂无视频资产");
       blockersEl.innerHTML = blockers.length
-        ? blockers.map((b) => `<li>• ${_escape(b)}</li>`).join("")
-        : `<li class="text-green-300">• 当前无阻塞</li>`;
+        ? blockers.map((b) => `<li class="text-amber-600">• ${_escape(b)}</li>`).join("")
+        : `<li class="text-green-600">• 当前无阻塞</li>`;
     }
 
     if (timelineEl) {

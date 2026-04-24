@@ -4,11 +4,11 @@
 (function () {
   function render(scene, active) {
     return `
-      <button data-scene-id="${scene.id}" class="scene-card w-full text-left border rounded-lg p-3 ${
-        active ? "border-blue-500 bg-blue-500/10" : "border-dark-500 bg-dark-700 hover:border-dark-400"
+      <button data-scene-id="${scene.id}" class="w-full text-left border rounded-lg p-3 transition-all ${
+        active ? "border-brand-500 bg-brand-50" : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
       }">
         <div class="text-xs text-gray-500 mb-1">Scene ${scene.scene_index}</div>
-        <div class="text-sm text-gray-200 truncate">${_escape(scene.scene_description || scene.prompt || "未命名分镜")}</div>
+        <div class="text-sm text-gray-700 truncate">${_escape(scene.scene_description || scene.prompt || "未命名分镜")}</div>
       </button>
     `;
   }

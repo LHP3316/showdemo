@@ -79,6 +79,28 @@ def _dialogue_anim_html(dialogue: str) -> str:
     return f"<div class='dialogue-anim'>{''.join(spans)}</div>"
 
 
+def _scenes_table_html(scenes: list[dict]) -> str:
+    if not scenes:
+        return "<div class='preview-empty'>暂无分镜数据</div>"
+    rows = []
+    for s in scenes:
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(s.get('id', '')))}</td>"
+            f"<td>{html.escape(str(s.get('scene_index', '')))}</td>"
+            f"<td>{html.escape(str(s.get('scene_description', '') or ''))}</td>"
+            f"<td>{html.escape(str(s.get('status', 'pending')))}</td>"
+            "</tr>"
+        )
+    return (
+        "<div class='scene-table-wrap'>"
+        "<table class='scene-table'>"
+        "<thead><tr><th>ID</th><th>序号</th><th>描述</th><th>状态</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody>"
+        "</table></div>"
+    )
+
+
 def do_login(base_url: str, username: str, password: str):
     ok, data = _api("POST", base_url, "/auth/login", payload={"username": username, "password": password})
     if not ok:
@@ -116,17 +138,16 @@ def create_project(base_url: str, token: str, title: str, script: str):
 
 def decompose_project(base_url: str, token: str, project_id: str):
     if not token:
-        return [], gr.update(choices=[], value=None), gr.update(value=[]), "请先登录"
+        return [], gr.update(choices=[], value=None), gr.update(value=_scenes_table_html([])), "请先登录"
     if not project_id:
-        return [], gr.update(choices=[], value=None), gr.update(value=[]), "请先创建项目"
+        return [], gr.update(choices=[], value=None), gr.update(value=_scenes_table_html([])), "请先创建项目"
     ok, data = _api("POST", base_url, f"/projects/{project_id}/decompose", token=token, payload={})
     if not ok:
-        return [], gr.update(choices=[], value=None), gr.update(value=[]), f"拆解失败：{data}"
+        return [], gr.update(choices=[], value=None), gr.update(value=_scenes_table_html([])), f"拆解失败：{data}"
     scenes = data if isinstance(data, list) else []
-    table = [[s.get("id"), s.get("scene_index"), s.get("scene_description", ""), s.get("status", "pending")] for s in scenes]
     choices = _scene_choices(scenes)
     selected = choices[0][1] if choices else None
-    return scenes, gr.update(choices=choices, value=selected), gr.update(value=table), f"拆解完成，共 {len(scenes)} 条分镜"
+    return scenes, gr.update(choices=choices, value=selected), gr.update(value=_scenes_table_html(scenes)), f"拆解完成，共 {len(scenes)} 条分镜"
 
 
 def load_scene(scene_id: str, scenes: list[dict]):
@@ -171,8 +192,7 @@ def save_scene(base_url: str, token: str, scene_id: str, scenes: list[dict], sce
             new_scenes.append(data)
         else:
             new_scenes.append(s)
-    table = [[s.get("id"), s.get("scene_index"), s.get("scene_description", ""), s.get("status", "pending")] for s in new_scenes]
-    return new_scenes, gr.update(value=table), "分镜已保存"
+    return new_scenes, gr.update(value=_scenes_table_html(new_scenes)), "分镜已保存"
 
 
 def gen_image(base_url: str, token: str, scene_id: str, scenes: list[dict]):
@@ -182,8 +202,7 @@ def gen_image(base_url: str, token: str, scene_id: str, scenes: list[dict]):
     if not ok:
         return scenes, gr.update(), "<div class='preview-empty'>生成失败</div>", f"图片生成失败：{data}"
     new_scenes = [data if str(s.get("id")) == str(scene_id) else s for s in scenes]
-    table = [[s.get("id"), s.get("scene_index"), s.get("scene_description", ""), s.get("status", "pending")] for s in new_scenes]
-    return new_scenes, gr.update(value=table), _preview_html(data), "图片生成完成"
+    return new_scenes, gr.update(value=_scenes_table_html(new_scenes)), _preview_html(data), "图片生成完成"
 
 
 def gen_video(base_url: str, token: str, scene_id: str, scenes: list[dict]):
@@ -193,8 +212,7 @@ def gen_video(base_url: str, token: str, scene_id: str, scenes: list[dict]):
     if not ok:
         return scenes, gr.update(), "<div class='preview-empty'>生成失败</div>", f"视频生成失败：{data}"
     new_scenes = [data if str(s.get("id")) == str(scene_id) else s for s in scenes]
-    table = [[s.get("id"), s.get("scene_index"), s.get("scene_description", ""), s.get("status", "pending")] for s in new_scenes]
-    return new_scenes, gr.update(value=table), _preview_html(data), "视频生成完成"
+    return new_scenes, gr.update(value=_scenes_table_html(new_scenes)), _preview_html(data), "视频生成完成"
 
 
 def submit_review(base_url: str, token: str, project_id: str, decision: str, comment: str):
@@ -225,6 +243,11 @@ def build_ui():
     .preview-empty,.dialogue-empty { color:#94a3b8; border:1px dashed #334155; border-radius:12px; padding:18px; text-align:center; }
     .dialogue-anim { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
     .dialogue-anim span { opacity:0; transform:translateY(8px); animation:wordin .35s ease forwards; background:#1d4ed8; color:#fff; border-radius:8px; padding:4px 8px; }
+    .scene-table-wrap { border:1px solid #334155; border-radius:10px; overflow:hidden; }
+    .scene-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .scene-table th,.scene-table td { border-bottom:1px solid #334155; padding:8px 10px; text-align:left; }
+    .scene-table th { background:#0f172a; color:#cbd5e1; }
+    .scene-table td { color:#e2e8f0; background:#111827; }
     @keyframes wordin { to { opacity:1; transform:translateY(0); } }
     """
     with gr.Blocks(css=css, title="字字动画创作台") as demo:
@@ -259,7 +282,7 @@ def build_ui():
 
             with gr.Column(scale=2):
                 gr.Markdown("### 3) 分镜列表")
-                scenes_table = gr.Dataframe(headers=["id", "scene_index", "scene_description", "status"], value=[], interactive=False)
+                scenes_table = gr.HTML(value=_scenes_table_html([]), label="分镜列表")
                 scene_select = gr.Dropdown(label="选择分镜", choices=[], value=None)
 
                 with gr.Row():

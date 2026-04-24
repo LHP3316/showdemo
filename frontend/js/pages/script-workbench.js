@@ -9,35 +9,29 @@
   function render(params) {
     const isNew = params.id === "new";
     return `
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 fade-in">
-        <section class="xl:col-span-2 bg-dark-800 border border-dark-500 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold text-gray-100">${isNew ? "创建项目剧本" : "编辑项目剧本"}</h2>
-            ${isNew ? "" : `<a class="text-sm text-blue-300" href="#/project/${params.id}">返回驾驶舱</a>`}
+      <div class="page-content fade-in">
+        <div class="max-w-4xl mx-auto">
+          <div class="card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold text-gray-900">${isNew ? "创建项目剧本" : "编辑项目剧本"}</h2>
+              ${isNew ? "" : `<a class="text-sm text-brand-600 hover:text-brand-700 font-medium" href="#/project/${params.id}">返回项目</a>`}
+            </div>
+            <form id="script-form" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">项目标题</label>
+                <input id="script-title" class="input-field" placeholder="例如：古镇迷案 第一集" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">剧本内容</label>
+                <textarea id="script-content" class="textarea-field min-h-[320px]" placeholder="分段输入剧情内容"></textarea>
+              </div>
+              <div class="flex items-center gap-3 pt-2">
+                <button class="btn-primary">保存剧本</button>
+                <button type="button" id="script-submit-step" class="btn-secondary">提交到分镜阶段</button>
+              </div>
+            </form>
           </div>
-          <form id="script-form" class="space-y-4">
-            <div>
-              <label class="block text-sm text-gray-400 mb-1.5">项目标题</label>
-              <input id="script-title" class="input-dark" placeholder="例如：古镇迷案 第一集" />
-            </div>
-            <div>
-              <label class="block text-sm text-gray-400 mb-1.5">剧本内容</label>
-              <textarea id="script-content" class="textarea-dark min-h-[280px]" placeholder="分段输入剧情内容"></textarea>
-            </div>
-            <div class="flex items-center gap-2">
-              <button class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-sm text-white">保存剧本</button>
-              <button type="button" id="script-submit-step" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm text-white">提交到分镜阶段</button>
-            </div>
-          </form>
-        </section>
-        <aside class="bg-dark-800 border border-dark-500 rounded-xl p-5">
-          <h3 class="text-sm text-gray-300 mb-2">操作说明</h3>
-          <ul class="text-sm text-gray-400 space-y-1">
-            <li>1. 先保存项目标题与剧本内容。</li>
-            <li>2. 点击“提交到分镜阶段”后项目进入处理流程。</li>
-            <li>3. 再进入分镜工位继续拆解与生成。</li>
-          </ul>
-        </aside>
+        </div>
       </div>
     `;
   }

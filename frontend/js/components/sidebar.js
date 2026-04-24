@@ -6,58 +6,44 @@
     const activeProjectId = App.getActiveProjectId();
     const canReview = ["director", "reviewer"].includes(user.role);
 
-    const baseItems = [{ label: "我的工作区", icon: "🏠", hash: "#/workspace" }];
-    const projectItems = activeProjectId
-      ? [
-          { label: "项目驾驶舱", icon: "🧭", hash: `#/project/${activeProjectId}` },
-          { label: "剧本工位", icon: "📝", hash: `#/project/${activeProjectId}/script` },
-          { label: "分镜工位", icon: "🎬", hash: `#/project/${activeProjectId}/storyboard` },
-          { label: "生成队列", icon: "⚙️", hash: `#/project/${activeProjectId}/render` },
-          ...(canReview ? [{ label: "审核会话", icon: "✅", hash: `#/project/${activeProjectId}/review` }] : []),
-          { label: "导出中心", icon: "📦", hash: `#/project/${activeProjectId}/export` },
-        ]
-      : [];
-    const items = [...baseItems, ...projectItems];
+    const navItems = [
+      { label: "工作台", hash: "#/workspace" },
+    ];
+    if (activeProjectId) {
+      navItems.push({ label: "项目", hash: `#/project/${activeProjectId}` });
+      navItems.push({ label: "剧本", hash: `#/project/${activeProjectId}/script` });
+      navItems.push({ label: "分镜", hash: `#/project/${activeProjectId}/storyboard` });
+      navItems.push({ label: "生成", hash: `#/project/${activeProjectId}/render` });
+      if (canReview) navItems.push({ label: "审核", hash: `#/project/${activeProjectId}/review` });
+      navItems.push({ label: "导出", hash: `#/project/${activeProjectId}/export` });
+    }
 
     return `
-      <div class="w-60 h-full bg-dark-700 border-r border-dark-500 flex flex-col">
-        <div class="px-5 py-5 border-b border-dark-500">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">AI</div>
+      <div class="topnav">
+        <div class="topnav-brand" onclick="window.location.hash='#/workspace'">
+          <div class="topnav-logo">AI</div>
+          <span>短剧协作台</span>
+        </div>
+        <div class="topnav-links">
+          ${navItems.map(item => {
+            const active = current === item.hash;
+            return `<a href="${item.hash}" class="topnav-link ${active ? 'active' : ''}">${item.label}</a>`;
+          }).join('')}
+        </div>
+        <div class="topnav-right">
+          <div class="topnav-user" id="topnav-user-btn">
+            <div class="topnav-avatar">${(user.username || 'U').charAt(0).toUpperCase()}</div>
             <div>
-              <div class="text-gray-100 font-bold text-sm">短剧协作台</div>
-              <div class="text-gray-500 text-xs">Workflow Studio</div>
+              <div class="topnav-username">${_escape(user.username)}</div>
+              <div class="topnav-role">${_roleLabel(user.role)}</div>
             </div>
           </div>
+          <button id="btn-logout" class="text-gray-400 hover:text-red-500 transition-colors" title="退出">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
         </div>
-        <nav class="flex-1 p-2 space-y-1 overflow-auto">
-          ${items
-            .map((item) => {
-              const active = current === item.hash;
-              return `
-                <a href="${item.hash}" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${
-                  active ? "active text-blue-300" : "text-gray-400 hover:text-gray-200"
-                }">
-                  <span>${item.icon}</span>
-                  <span>${item.label}</span>
-                </a>
-              `;
-            })
-            .join("")}
-        </nav>
-        <div class="border-t border-dark-500 px-4 py-3">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xs flex items-center justify-center font-bold">
-              ${(user.username || "U").charAt(0).toUpperCase()}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm text-gray-200 truncate">${user.username}</div>
-              <div class="text-xs text-gray-500">${_roleLabel(user.role)}</div>
-            </div>
-            <button id="btn-logout" class="text-gray-500 hover:text-red-400 p-1" title="退出">⎋</button>
-          </div>
-        </div>
-      </div>`;
+      </div>
+    `;
   }
 
   function mount() {
@@ -79,6 +65,10 @@
   function _roleLabel(role) {
     const map = { director: "导演", staff: "工作人员", writer: "编剧", reviewer: "审核" };
     return map[role] || role || "成员";
+  }
+
+  function _escape(text) {
+    return String(text || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
   }
 
   window.Sidebar = { render, mount };

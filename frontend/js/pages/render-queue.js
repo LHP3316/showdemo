@@ -9,10 +9,10 @@
       return `<div class="text-gray-400">请先创建项目。</div>`;
     }
     return `
-      <div class="space-y-4 fade-in">
-        <div class="flex items-center justify-between">
-          <h2 id="rq-title" class="text-lg font-semibold text-gray-100">生成队列</h2>
-          <button id="rq-refresh" class="px-3 py-1.5 rounded-lg bg-dark-600 hover:bg-dark-500 text-sm text-gray-200">刷新状态</button>
+      <div class="page-content fade-in">
+        <div class="flex items-center justify-between mb-4">
+          <h2 id="rq-title" class="text-xl font-bold text-gray-900">生成队列</h2>
+          <button id="rq-refresh" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 transition-colors">刷新状态</button>
         </div>
         <div id="rq-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
       </div>
@@ -46,18 +46,18 @@
       return;
     }
     list.innerHTML = state.scenes.map((s) => `
-      <article class="bg-dark-800 border border-dark-500 rounded-xl p-4">
+      <article class="card">
         <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-100 font-semibold">Scene ${s.scene_index}</div>
-          <span class="badge ${s.video_url ? "bg-green-500/15 text-green-300" : "bg-amber-500/15 text-amber-300"}">
-            ${s.video_url ? "video_ready" : (s.image_url ? "image_ready" : "todo")}
+          <div class="text-sm text-gray-900 font-semibold">Scene ${s.scene_index}</div>
+          <span class="badge ${s.video_url ? "badge-green" : (s.image_url ? "badge-amber" : "badge-gray")}">
+            ${s.video_url ? "视频就绪" : (s.image_url ? "图片就绪" : "待处理")}
           </span>
         </div>
         <p class="text-xs text-gray-500 mt-1">${_escape(s.scene_description || s.prompt || "")}</p>
         <div class="mt-3 flex items-center gap-2">
-          <button data-action="image" data-id="${s.id}" class="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-xs text-white">生成图片</button>
-          <button data-action="video" data-id="${s.id}" class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-xs text-white">生成视频</button>
-          <a class="text-xs text-blue-300" href="#/project/${projectId}/storyboard">进入工位</a>
+          <button data-action="image" data-id="${s.id}" class="px-3 py-1.5 rounded bg-brand-600 hover:bg-brand-700 text-xs text-white transition-colors">生成图片</button>
+          <button data-action="video" data-id="${s.id}" class="px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-xs text-white transition-colors">生成视频</button>
+          <a class="text-xs text-brand-600 hover:text-brand-700 font-medium" href="#/project/${projectId}/storyboard">进入工位</a>
         </div>
       </article>
     `).join("");

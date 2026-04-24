@@ -10,10 +10,10 @@
       <div class="space-y-3">
         ${items.map((item) => `
           <div class="flex gap-3">
-            <div class="w-2 h-2 rounded-full mt-2 bg-blue-400"></div>
+            <div class="w-2 h-2 rounded-full mt-2 bg-brand-500"></div>
             <div>
-              <div class="text-sm text-gray-200">${_escape(item.title)}</div>
-              <div class="text-xs text-gray-500">${_escape(item.time || "")}</div>
+              <div class="text-sm text-gray-700">${_escape(item.title)}</div>
+              <div class="text-xs text-gray-400">${_escape(item.time || "")}</div>
             </div>
           </div>
         `).join("")}

@@ -4,7 +4,7 @@
 (function () {
   function render(name, role) {
     const roleText = role || "staff";
-    const cls = roleText === "director" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300";
+    const cls = roleText === "director" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700";
     return `
       <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs ${cls}">
         <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
