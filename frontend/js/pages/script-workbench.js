@@ -13,16 +13,16 @@
         <div class="max-w-4xl mx-auto">
           <div class="card">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-xl font-bold text-gray-900">${isNew ? "创建项目剧本" : "编辑项目剧本"}</h2>
-              ${isNew ? "" : `<a class="text-sm text-brand-600 hover:text-brand-700 font-medium" href="#/project/${params.id}">返回项目</a>`}
+              <h2 class="text-2xl font-bold text-white">${isNew ? "创建项目剧本" : "编辑项目剧本"}</h2>
+              ${isNew ? "" : `<a class="text-sm text-gold-400 hover:text-gold-500 font-semibold" href="#/project/${params.id}">返回项目</a>`}
             </div>
             <form id="script-form" class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">项目标题</label>
+                <label class="block text-sm font-medium text-gray-300 mb-2">项目标题</label>
                 <input id="script-title" class="input-field" placeholder="例如：古镇迷案 第一集" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">剧本内容</label>
+                <label class="block text-sm font-medium text-gray-300 mb-2">剧本内容</label>
                 <textarea id="script-content" class="textarea-field min-h-[320px]" placeholder="分段输入剧情内容"></textarea>
               </div>
               <div class="flex items-center gap-3 pt-2">

@@ -11,16 +11,16 @@
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
           <section class="xl:col-span-8 card">
             <div class="flex items-center justify-between mb-4">
-              <h2 id="rs-title" class="text-xl font-bold text-gray-900">审核会话</h2>
+              <h2 id="rs-title" class="text-xl font-bold text-white">审核会话</h2>
               <div class="flex items-center gap-2">
-                <button id="rs-approve" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors">通过</button>
-                <button id="rs-reject" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">驳回</button>
+                <button id="rs-approve" class="px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-sm font-bold transition-all shadow-lg">✓ 通过</button>
+                <button id="rs-reject" class="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white text-sm font-bold transition-all shadow-lg">✗ 驳回</button>
               </div>
             </div>
             <div id="rs-scenes" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
           </section>
           <aside class="xl:col-span-4 card">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">历史审核</h3>
+            <h3 class="text-sm font-bold text-white mb-3">历史审核</h3>
             <div id="rs-history" class="space-y-2"></div>
           </aside>
         </div>
@@ -54,12 +54,12 @@
     if (scenesEl) {
       scenesEl.innerHTML = state.scenes.length
         ? state.scenes.map((s) => `
-          <article class="border border-gray-200 bg-gray-50 rounded-lg p-3">
-            <div class="text-xs text-gray-500 mb-2">Scene ${s.scene_index}</div>
-            <div class="text-sm text-gray-700 mb-2">${_escape(s.scene_description || s.prompt || "")}</div>
+          <article class="border border-white/10 bg-white/5 rounded-lg p-3">
+            <div class="text-xs text-gray-400 mb-2">Scene ${s.scene_index}</div>
+            <div class="text-sm text-gray-200 mb-2">${_escape(s.scene_description || s.prompt || "")}</div>
             ${s.image_url
-              ? `<img src="${s.image_url}" class="w-full h-36 object-cover rounded border border-gray-200" alt="scene" />`
-              : `<div class="w-full h-36 rounded border-2 border-dashed border-gray-200 flex items-center justify-center text-xs text-gray-400">暂无图片</div>`
+              ? `<img src="${s.image_url}" class="w-full h-36 object-cover rounded border border-white/10" alt="scene" />`
+              : `<div class="w-full h-36 rounded border-2 border-dashed border-white/20 flex items-center justify-center text-xs text-gray-500">暂无图片</div>`
             }
           </article>
         `).join("")
@@ -69,10 +69,10 @@
     if (historyEl) {
       historyEl.innerHTML = state.reviews.length
         ? state.reviews.map((r) => `
-          <div class="border border-gray-200 bg-gray-50 rounded-lg p-3">
+          <div class="border border-white/10 bg-white/5 rounded-lg p-3">
             <div class="text-xs text-gray-500">${r.created_at || ""}</div>
-            <div class="text-sm ${r.status === "approved" ? "text-green-600" : "text-red-600"} mt-1 font-medium">${r.status === "approved" ? "通过" : "驳回"}</div>
-            <div class="text-sm text-gray-600 mt-1">${_escape(r.comment || "无备注")}</div>
+            <div class="text-sm ${r.status === "approved" ? "text-green-400" : "text-red-400"} mt-1 font-bold">${r.status === "approved" ? "✓ 通过" : "✗ 驳回"}</div>
+            <div class="text-sm text-gray-300 mt-1">${_escape(r.comment || "无备注")}</div>
           </div>
         `).join("")
         : `<div class="text-sm text-gray-500">暂无审核记录</div>`;

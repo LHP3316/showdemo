@@ -25,8 +25,8 @@
         <section class="card">
           <div class="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h2 id="cockpit-title" class="text-2xl font-bold text-gray-900">项目加载中...</h2>
-              <p id="cockpit-meta" class="text-sm text-gray-500 mt-1"></p>
+              <h2 id="cockpit-title" class="text-3xl font-black text-white">项目加载中...</h2>
+              <p id="cockpit-meta" class="text-sm text-gray-400 mt-2"></p>
             </div>
             <div id="cockpit-assignee"></div>
           </div>
@@ -35,25 +35,25 @@
 
         <section class="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <article class="card">
-            <h3 class="text-sm text-gray-500 mb-2">当前进度</h3>
-            <p id="cockpit-progress" class="text-2xl text-gray-900 font-bold">-</p>
+            <h3 class="text-sm text-gray-400 mb-2">当前进度</h3>
+            <p id="cockpit-progress" class="text-3xl text-gold-400 font-black">-</p>
             <div class="mt-4 flex gap-2">
-              <a id="cockpit-link-script" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 transition-colors" href="#">剧本工位</a>
-              <a id="cockpit-link-board" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 transition-colors" href="#">分镜工位</a>
+              <a id="cockpit-link-script" class="px-3 py-1.5 rounded-lg btn-secondary" href="#">剧本工位</a>
+              <a id="cockpit-link-board" class="px-3 py-1.5 rounded-lg btn-secondary" href="#">分镜工位</a>
             </div>
           </article>
           <article class="card">
-            <h3 class="text-sm text-gray-500 mb-2">阻塞提醒</h3>
-            <ul id="cockpit-blockers" class="text-sm text-gray-600 space-y-1"></ul>
+            <h3 class="text-sm text-gray-400 mb-2">阻塞提醒</h3>
+            <ul id="cockpit-blockers" class="text-sm text-gray-300 space-y-1"></ul>
           </article>
           <article class="card">
-            <h3 class="text-sm text-gray-500 mb-2">资产统计</h3>
-            <p id="cockpit-assets" class="text-sm text-gray-700"></p>
+            <h3 class="text-sm text-gray-400 mb-2">资产统计</h3>
+            <p id="cockpit-assets" class="text-sm text-gray-200"></p>
           </article>
         </section>
 
         <section class="card">
-          <h3 class="text-sm text-gray-500 mb-3">流程时间线</h3>
+          <h3 class="text-sm text-gray-400 mb-3">流程时间线</h3>
           <div id="cockpit-timeline"></div>
         </section>
       </div>

@@ -48,16 +48,16 @@
     list.innerHTML = state.scenes.map((s) => `
       <article class="card">
         <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-900 font-semibold">Scene ${s.scene_index}</div>
+          <div class="text-sm text-white font-bold">Scene ${s.scene_index}</div>
           <span class="badge ${s.video_url ? "badge-green" : (s.image_url ? "badge-amber" : "badge-gray")}">
             ${s.video_url ? "视频就绪" : (s.image_url ? "图片就绪" : "待处理")}
           </span>
         </div>
-        <p class="text-xs text-gray-500 mt-1">${_escape(s.scene_description || s.prompt || "")}</p>
+        <p class="text-xs text-gray-400 mt-2">${_escape(s.scene_description || s.prompt || "")}</p>
         <div class="mt-3 flex items-center gap-2">
-          <button data-action="image" data-id="${s.id}" class="px-3 py-1.5 rounded bg-brand-600 hover:bg-brand-700 text-xs text-white transition-colors">生成图片</button>
-          <button data-action="video" data-id="${s.id}" class="px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-700 text-xs text-white transition-colors">生成视频</button>
-          <a class="text-xs text-brand-600 hover:text-brand-700 font-medium" href="#/project/${projectId}/storyboard">进入工位</a>
+          <button data-action="image" data-id="${s.id}" class="px-3 py-1.5 rounded btn-primary text-xs">生成图片</button>
+          <button data-action="video" data-id="${s.id}" class="px-3 py-1.5 rounded bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-xs text-white transition-all shadow-lg">生成视频</button>
+          <a class="text-xs text-gold-400 hover:text-gold-500 font-semibold" href="#/project/${projectId}/storyboard">进入工位</a>
         </div>
       </article>
     `).join("");

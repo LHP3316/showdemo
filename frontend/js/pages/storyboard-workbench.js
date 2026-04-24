@@ -24,23 +24,23 @@
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
           <aside class="xl:col-span-3 card h-[600px] overflow-auto">
             <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-semibold text-gray-900">分镜卡片流</h3>
-              <button id="swb-add" class="px-2.5 py-1 rounded-lg text-xs bg-brand-600 hover:bg-brand-700 text-white transition-colors">新建</button>
+              <h3 class="text-sm font-bold text-white">分镜卡片流</h3>
+              <button id="swb-add" class="px-2.5 py-1 rounded-lg text-xs btn-primary">新建</button>
             </div>
             <div id="swb-list" class="space-y-2"></div>
           </aside>
           <section class="xl:col-span-5 card flex flex-col">
             <div class="flex items-center justify-between mb-3">
-              <h2 id="swb-title" class="text-base font-semibold text-gray-900">分镜预览</h2>
+              <h2 id="swb-title" class="text-base font-bold text-white">分镜预览</h2>
               <div class="flex items-center gap-2">
-                <button id="swb-generate-image" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-xs text-white transition-colors">文生图</button>
-                <button id="swb-generate-video" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-xs text-white transition-colors">图生视频</button>
+                <button id="swb-generate-image" class="px-3 py-1.5 rounded-lg btn-primary text-xs">文生图</button>
+                <button id="swb-generate-video" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-xs text-white transition-all shadow-lg">图生视频</button>
               </div>
             </div>
-            <div id="swb-preview" class="flex-1 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 text-sm">请选择分镜</div>
+            <div id="swb-preview" class="flex-1 border-2 border-dashed border-white/20 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 text-sm">请选择分镜</div>
           </section>
           <section class="xl:col-span-4 card overflow-auto">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">编辑面板</h3>
+            <h3 class="text-sm font-bold text-white mb-3">编辑面板</h3>
             <form id="swb-form" class="space-y-3">
               <input id="swb-index" class="input-field" type="number" min="1" placeholder="分镜序号" />
               <input id="swb-characters" class="input-field" placeholder="角色（逗号分隔）" />
@@ -50,8 +50,8 @@
               <input id="swb-emotion" class="input-field" placeholder="情绪" />
               <textarea id="swb-prompt" class="textarea-field min-h-[120px]" placeholder="Prompt"></textarea>
               <div class="flex items-center gap-2 pt-2">
-                <button class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-sm text-white font-medium transition-colors">保存分镜</button>
-                <button type="button" id="swb-submit-review" class="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-sm text-white transition-colors">提交审核</button>
+                <button class="flex-1 py-2 rounded-lg bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-sm text-white font-bold transition-all shadow-lg">保存分镜</button>
+                <button type="button" id="swb-submit-review" class="px-3 py-2 rounded-lg bg-gradient-to-r from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 text-sm text-cinema-900 font-bold transition-all shadow-lg">提交审核</button>
               </div>
             </form>
           </section>
