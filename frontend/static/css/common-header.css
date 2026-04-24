@@ -1,0 +1,156 @@
+.static-common-header {
+  width: 100%;
+  background: rgba(10, 10, 15, 0.98);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.16);
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.static-common-header__inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  height: 64px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.static-common-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.static-common-brand__badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, #ffd700, #ffb700);
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.static-common-brand__name {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.static-common-nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.static-common-nav__btn {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #d1d5db;
+  width: auto;
+  height: 36px;
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.static-common-nav__btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.static-common-nav__btn.active,
+.static-common-nav__btn[aria-current="page"] {
+  width: auto;
+  height: 36px;
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-radius: 8px;
+  border-color: transparent;
+  background-color: rgba(255, 215, 0, 0.0941176488995552);
+  color: rgba(255, 215, 0, 1);
+  font-weight: 700;
+}
+
+.static-common-right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.static-common-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, #ffd700, #ffb700);
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.static-common-username {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.static-common-logout {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.static-common-logout:hover {
+  border-color: rgba(255, 215, 0, 0.26);
+  color: #fde68a;
+}
+
+@media (max-width: 1100px) {
+  .static-common-header__inner {
+    padding: 0 16px;
+  }
+
+  .static-common-nav {
+    position: static;
+    transform: none;
+    margin-left: 12px;
+    gap: 6px;
+  }
+
+  .static-common-nav__btn {
+    padding: 0 10px;
+    font-size: 14px;
+  }
+}

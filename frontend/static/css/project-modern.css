@@ -15,13 +15,13 @@ body {
   max-width: 1440px;
   min-height: 900px;
   margin: 0 auto;
-  padding-top: 64px;
+  padding-top: 20px;
   font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC-Black", sans-serif;
 }
 
 .project-hero {
   position: relative;
-  padding: 0 40px 16px;
+  padding: 16px 40px 16px;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
 }
 

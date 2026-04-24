@@ -97,6 +97,79 @@
     bindClick("#2_210", () => routeTo("export"));
   }
 
+  function injectCommonHeaderStyles() {
+    if (document.getElementById("static-common-header-style")) return;
+    const link = document.createElement("link");
+    link.id = "static-common-header-style";
+    link.rel = "stylesheet";
+    link.href = "css/common-header.css";
+    document.head.appendChild(link);
+  }
+
+  function injectCommonHeader() {
+    if (document.getElementById("static-common-header")) return;
+    if (isPublicPage()) return;
+    const header = document.createElement("header");
+    header.id = "static-common-header";
+    header.className = "static-common-header";
+    header.innerHTML = `
+      <div class="static-common-header__inner">
+        <div class="static-common-brand">
+          <span class="static-common-brand__badge">AI</span>
+          <span class="static-common-brand__name">AI短剧协作台</span>
+        </div>
+        <nav class="static-common-nav" aria-label="主导航">
+          <button id="nav-workspace" class="static-common-nav__btn" type="button">工作台</button>
+          <button id="nav-project" class="static-common-nav__btn" type="button">项目管理</button>
+          <button id="nav-render" class="static-common-nav__btn" type="button">生成队列</button>
+          <button id="nav-review" class="static-common-nav__btn" type="button">审核中心</button>
+        </nav>
+        <div class="static-common-right">
+          <span id="top-avatar" class="static-common-avatar">U</span>
+          <span id="top-username" class="static-common-username">User</span>
+          <button id="btn-logout" class="static-common-logout" type="button">退出</button>
+        </div>
+      </div>
+    `;
+    document.body.insertBefore(header, document.body.firstChild);
+  }
+
+  function getCurrentRouteName() {
+    const current = pageName.replace(".html", "");
+    const routeMap = {
+      workspace: "workspace",
+      project: "project",
+      render: "render",
+      review: "review",
+      script: "project",
+      storyboard: "project",
+      export: "render",
+    };
+    return routeMap[current] || "workspace";
+  }
+
+  function setActiveNav() {
+    const active = getCurrentRouteName();
+    const mapping = {
+      workspace: "#nav-workspace",
+      project: "#nav-project",
+      render: "#nav-render",
+      review: "#nav-review",
+    };
+    Object.values(mapping).forEach((selector) => {
+      document.querySelectorAll(selector).forEach((node) => {
+        node.classList.remove("active");
+        node.removeAttribute("aria-current");
+      });
+    });
+    const activeSelector = mapping[active];
+    if (!activeSelector) return;
+    document.querySelectorAll(activeSelector).forEach((node) => {
+      node.classList.add("active");
+      node.setAttribute("aria-current", "page");
+    });
+  }
+
   function applyUserToUI() {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -107,6 +180,8 @@
       });
       const semanticTopUser = document.querySelector("#top-username");
       if (semanticTopUser) semanticTopUser.textContent = name;
+      const topAvatar = document.querySelector("#top-avatar");
+      if (topAvatar) topAvatar.textContent = String(name).trim().charAt(0) || "U";
       const topUser = document.querySelector("#2_49");
       if (topUser) topUser.textContent = name;
     } catch {
@@ -124,9 +199,13 @@
   }
 
   async function bootstrapProtectedPage() {
+    injectCommonHeaderStyles();
+    injectCommonHeader();
+    setActiveNav();
     const ok = await ensureSession(true);
     if (!ok) return;
     bindKnownHeaderActions();
+    setActiveNav();
     applyUserToUI();
   }
 
