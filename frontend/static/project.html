@@ -8,92 +8,155 @@
   <link rel="stylesheet" href="css/project-modern.css">
 </head>
 <body>
-  <main class="project-page">
-    <header class="project-topbar">
-      <div class="brand">
-        <span class="brand-badge">AI</span>
-        <span class="brand-name">AI短剧协作台</span>
+  <main class="project-page" aria-labelledby="project-title">
+    <header class="project-hero">
+      <div class="project-hero-top">
+        <nav class="breadcrumb" aria-label="面包屑">
+          <span>项目管理</span>
+          <span class="breadcrumb-sep">/</span>
+          <strong id="project-breadcrumb-current">寻龙少年·热血奇遇记</strong>
+        </nav>
       </div>
-      <nav class="top-nav">
-        <button id="nav-workspace" class="top-nav-btn" type="button">工作台</button>
-        <button id="nav-project" class="top-nav-btn active" type="button">项目管理</button>
-        <button id="nav-render" class="top-nav-btn" type="button">生成队列</button>
-        <button id="nav-review" class="top-nav-btn" type="button">审核中心</button>
-      </nav>
-      <div class="top-right">
-        <span class="avatar">U</span>
-        <span id="top-username" class="username">User</span>
-        <button id="btn-logout" class="logout-btn" type="button">退出</button>
+
+      <div class="project-hero-main">
+        <section class="project-heading" aria-label="项目标题">
+          <h1 id="project-title" class="project-title">寻龙少年·热血奇遇记</h1>
+          <p id="project-subtitle" class="project-subtitle">电影工业级创作协作平台</p>
+          <p class="project-meta-wrap">
+            <span id="project-meta" class="project-meta-pill">古风热血 · 12集</span>
+          </p>
+        </section>
+
+        <nav class="project-flow" aria-label="项目流程">
+          <ol class="flow-list">
+            <li class="flow-step is-done">
+              <span class="flow-index" aria-hidden="true">✓</span>
+              <span class="flow-label">剧本创作</span>
+            </li>
+            <li class="flow-step is-active">
+              <span class="flow-index" aria-hidden="true">2</span>
+              <span class="flow-label">分镜设计</span>
+            </li>
+            <li class="flow-step">
+              <span class="flow-index" aria-hidden="true">3</span>
+              <span class="flow-label">生成队列</span>
+            </li>
+            <li class="flow-step">
+              <span class="flow-index" aria-hidden="true">4</span>
+              <span class="flow-label">审核确认</span>
+            </li>
+            <li class="flow-step">
+              <span class="flow-index" aria-hidden="true">5</span>
+              <span class="flow-label">导出交付</span>
+            </li>
+          </ol>
+        </nav>
       </div>
     </header>
 
-    <section class="project-header">
-      <div class="breadcrumb">项目管理 / <span id="project-breadcrumb-current">加载中...</span></div>
-      <h1 id="project-title" class="project-title">加载中...</h1>
-      <p id="project-subtitle" class="project-subtitle">正在加载项目信息...</p>
-      <div id="project-meta" class="project-meta-pill">N/A</div>
-    </section>
+    <section class="project-overview" aria-label="项目概览">
+      <article class="overview-card progress-card" aria-labelledby="progress-title">
+        <header class="card-head">
+          <h2 id="progress-title" class="card-title">制作进度</h2>
+          <p id="project-progress-percent" class="progress-percent">42%</p>
+        </header>
 
-    <section class="project-layout">
-      <div class="panel">
-        <h2 class="panel-title">制作进度</h2>
-        <div class="progress-row">
-          <div id="project-progress-summary">-</div>
-          <div id="project-progress-percent" class="progress-percent">0%</div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="42">
+          <span id="project-progress-bar" class="progress-bar" style="width: 42%;"></span>
         </div>
-        <div class="progress-track">
-          <div id="project-progress-bar" class="progress-bar"></div>
-        </div>
-        <ul class="status-list">
-          <li>剧本阶段: 已完成</li>
-          <li>分镜阶段: 进行中</li>
-          <li>生成阶段: 待开始</li>
+
+        <p id="project-progress-summary" class="progress-summary">分镜设计阶段 · 第5/12集</p>
+        <ul class="status-inline">
+          <li class="status-ok">剧本已完成</li>
+          <li class="status-current">分镜进行中</li>
+          <li class="status-wait">生成 待开始</li>
         </ul>
-      </div>
+      </article>
 
-      <div class="panel">
-        <h2 class="panel-title">资产统计</h2>
-        <div class="asset-grid">
-          <div class="asset-card">
-            <div id="asset-images" class="asset-num">0</div>
-            <div class="asset-label">分镜图</div>
-          </div>
-          <div class="asset-card">
-            <div id="asset-videos" class="asset-num">0</div>
-            <div class="asset-label">视频片段</div>
-          </div>
-          <div class="asset-card">
-            <div id="asset-scenes" class="asset-num">0</div>
-            <div class="asset-label">总场景</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2 class="panel-title">项目时间线</h2>
-        <ul id="project-timeline" class="timeline-list">
-          <li>加载中...</li>
-        </ul>
-      </div>
-
-      <div class="panel">
-        <h2 class="panel-title">阻塞问题</h2>
+      <article class="overview-card blocker-card" aria-labelledby="blocker-title">
+        <header class="card-head">
+          <h2 id="blocker-title" class="card-title">阻塞问题</h2>
+          <p id="blocker-count" class="blocker-count" aria-live="polite">2</p>
+        </header>
         <ul id="project-blockers" class="blocker-list">
-          <li>加载中...</li>
+          <li>第7集分镜参考素材缺失，无法继续生成</li>
+          <li>第9集配音演员档期冲突待协调</li>
         </ul>
-      </div>
+        <button id="btn-view-blockers" class="blocker-action" type="button">查看全部问题</button>
+      </article>
 
-      <div class="panel">
-        <h2 class="panel-title">快速操作</h2>
-        <div class="quick-actions">
-          <button id="btn-go-script" class="action-btn" type="button">进入剧本工位</button>
-          <button id="btn-go-storyboard" class="action-btn" type="button">进入分镜工位</button>
-          <button id="btn-go-render" class="action-btn" type="button">查看生成队列</button>
-          <button id="btn-go-review" class="action-btn" type="button">进入审核中心</button>
-          <button id="btn-go-export" class="action-btn" type="button">进入导出交付</button>
-        </div>
-      </div>
+      <article class="overview-card assets-card" aria-labelledby="asset-title">
+        <header class="card-head">
+          <h2 id="asset-title" class="card-title">资产统计</h2>
+        </header>
+        <dl class="asset-grid">
+          <div class="asset-item">
+            <dt class="asset-label">分镜图</dt>
+            <dd id="asset-images" class="asset-num is-blue">168</dd>
+          </div>
+          <div class="asset-item">
+            <dt class="asset-label">视频片段</dt>
+            <dd id="asset-videos" class="asset-num is-purple">84</dd>
+          </div>
+          <div class="asset-item">
+            <dt class="asset-label">已完成集</dt>
+            <dd id="asset-scenes" class="asset-num is-green">12</dd>
+          </div>
+        </dl>
+      </article>
     </section>
+
+    <section class="project-main" aria-label="项目详情内容">
+      <section class="timeline-panel" aria-labelledby="timeline-title">
+        <h2 id="timeline-title" class="section-title">项目时间线</h2>
+        <ol id="project-timeline" class="timeline-list">
+          <li class="timeline-item is-done">
+            <div class="timeline-dot" aria-hidden="true"></div>
+            <div class="timeline-body">
+              <h3 class="timeline-item-title">剧本创作完成</h3>
+              <p class="timeline-item-desc">由 李编剧 提交，已通过导演审核 · 2024-03-01 14:30</p>
+            </div>
+            <span class="timeline-tag">已完成</span>
+          </li>
+          <li class="timeline-item is-active">
+            <div class="timeline-dot" aria-hidden="true"></div>
+            <div class="timeline-body">
+              <h3 class="timeline-item-title">分镜设计进行中</h3>
+              <p class="timeline-item-desc">由 张导演 负责，第5集分镜完成，第6集设计中 · 截止 2024-03-20</p>
+            </div>
+            <span class="timeline-tag">进行中</span>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-dot" aria-hidden="true"></div>
+            <div class="timeline-body">
+              <h3 class="timeline-item-title">AI生成队列</h3>
+              <p class="timeline-item-desc">等待分镜设计完成后自动触发生成任务</p>
+            </div>
+            <span class="timeline-tag">待开始</span>
+          </li>
+        </ol>
+      </section>
+
+      <aside class="quick-panel" aria-labelledby="quick-title">
+        <h2 id="quick-title" class="section-title">快速操作</h2>
+        <nav class="quick-actions" aria-label="快速操作按钮">
+          <button id="btn-go-script" class="action-btn action-btn--dark" type="button">进入剧本工位</button>
+          <button id="btn-go-storyboard" class="action-btn action-btn--primary" type="button">进入分镜工位</button>
+          <button id="btn-go-render" class="action-btn action-btn--dark" type="button">查看生成队列</button>
+          <button id="btn-go-review" class="action-btn action-btn--dark is-hidden" type="button">进入审核中心</button>
+          <button id="btn-go-export" class="action-btn action-btn--dark is-hidden" type="button">进入导出交付</button>
+        </nav>
+      </aside>
+    </section>
+
+    <nav class="utility-nav" aria-label="全局导航">
+      <button id="nav-workspace" type="button">工作台</button>
+      <button id="nav-project" type="button">项目管理</button>
+      <button id="nav-render" type="button">生成队列</button>
+      <button id="nav-review" type="button">审核中心</button>
+      <button id="btn-logout" type="button">退出</button>
+      <span id="top-username">User</span>
+    </nav>
   </main>
 
   <script src="js/api.js"></script>
@@ -102,4 +165,3 @@
   <script src="js/page-tools.js"></script>
 </body>
 </html>
-

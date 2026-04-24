@@ -17,6 +17,7 @@
     bindClick("#btn-go-render", () => goToWorkbench("render"));
     bindClick("#btn-go-review", () => goToWorkbench("review"));
     bindClick("#btn-go-export", () => goToWorkbench("export"));
+    bindClick("#btn-view-blockers", () => goToWorkbench("review"));
   }
 
   function bindClick(selector, handler) {
@@ -31,7 +32,9 @@
       if (!id) {
         const projectsRes = await api.get("/projects?size=1");
         const first = projectsRes && projectsRes.data && projectsRes.data.items ? projectsRes.data.items[0] : null;
-        if (!first || !first.id) return;
+        if (!first || !first.id) {
+          return;
+        }
         id = String(first.id);
         localStorage.setItem("activeProjectId", id);
         window.history.replaceState({}, "", `project.html?id=${id}`);
@@ -54,7 +57,7 @@
       patchBlockers(project);
     } catch (err) {
       console.error("Failed to load project detail:", err);
-      setText("#project-subtitle", "Load failed. Please refresh.");
+      // keep semantic page defaults when backend is unavailable
     }
   }
 
@@ -78,12 +81,12 @@
   }
 
   function patchProjectHeader(project) {
-    const title = project.title || "Untitled project";
-    const meta = `${project.genre || "N/A"} - ${project.episode_count || 0} eps`;
+    const title = project.title || "未命名项目";
+    const meta = `${project.genre || "未知风格"} · ${project.episode_count || 0} 集`;
     setText("#project-breadcrumb-current", title);
     setText("#project-title", title);
     setText("#project-meta", meta);
-    setText("#project-subtitle", project.description || "No description");
+    setText("#project-subtitle", project.description || "电影工业级创作协作平台");
   }
 
   function patchProgress(project, tasks) {
@@ -95,11 +98,13 @@
     setText("#project-progress-percent", `${percent}%`);
     setText(
       "#project-progress-summary",
-      `${mapProjectStatus(project.status)} - EP ${project.current_episode || 1}/${project.episode_count || 0}`
+      `${mapProjectStatus(project.status)}阶段 · 第${project.current_episode || 1}/${project.episode_count || 0}集`
     );
 
     const bar = document.querySelector("#project-progress-bar");
     if (bar) bar.style.width = `${percent}%`;
+    const track = document.querySelector(".progress-track");
+    if (track) track.setAttribute("aria-valuenow", String(percent));
   }
 
   function patchAssets(assets) {
@@ -109,26 +114,67 @@
   }
 
   function patchTimeline(project) {
-    const items = [];
-    items.push(`Project created`);
-    items.push(`Current status: ${mapProjectStatus(project.status)}`);
-    if (project.updated_at) {
-      items.push(`Last updated: ${project.updated_at}`);
-    }
+    const items = [
+      {
+        title: "剧本创作完成",
+        desc: "由编剧提交，已通过导演审核",
+        tag: "已完成",
+        state: "done",
+      },
+      {
+        title: "分镜设计进行中",
+        desc: `当前状态：${mapProjectStatus(project.status)} · 截止 ${formatDate(project.updated_at)}`,
+        tag: "进行中",
+        state: "active",
+      },
+      {
+        title: "AI生成队列",
+        desc: "等待分镜设计完成后自动触发生成任务",
+        tag: "待开始",
+        state: "pending",
+      },
+    ];
 
     const list = document.querySelector("#project-timeline");
     if (!list) return;
-    list.innerHTML = items.map((it) => `<li>${escapeHtml(it)}</li>`).join("");
+    list.innerHTML = items
+      .map(
+        (it) => `
+        <li class="timeline-item ${it.state === "done" ? "is-done" : it.state === "active" ? "is-active" : ""}">
+          <div class="timeline-dot" aria-hidden="true"></div>
+          <div class="timeline-body">
+            <h3 class="timeline-item-title">${escapeHtml(it.title)}</h3>
+            <p class="timeline-item-desc">${escapeHtml(it.desc)}</p>
+          </div>
+          <span class="timeline-tag">${escapeHtml(it.tag)}</span>
+        </li>`
+      )
+      .join("");
   }
 
   function patchBlockers(project) {
     const box = document.querySelector("#project-blockers");
+    const count = document.querySelector("#blocker-count");
+    const action = document.querySelector("#btn-view-blockers");
     if (!box) return;
+
+    let issues = [];
     if (project.status === "rejected") {
-      box.innerHTML = "<li>Project was rejected. Please review comments and resubmit.</li>";
+      issues = ["审核未通过：请根据反馈修改后重新提交。"];
+    } else if (project.status === "processing" || project.status === "review") {
+      issues = ["第7集分镜参考素材缺失，无法继续生成", "第9集配音演员档期冲突待协调"];
+    }
+
+    if (!issues.length) {
+      box.innerHTML = "<li>暂无阻塞问题</li>";
+      if (count) count.textContent = "0";
+      if (action) action.style.visibility = "hidden";
       return;
     }
-    box.innerHTML = "<li>No critical blockers detected.</li>";
+
+    box.innerHTML = issues.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+    if (count) count.textContent = String(issues.length);
+    if (action) action.style.visibility = "visible";
   }
 
   function setText(selector, text) {
@@ -138,13 +184,13 @@
 
   function mapProjectStatus(status) {
     const map = {
-      draft: "Draft",
-      processing: "In progress",
-      review: "In review",
-      approved: "Done",
-      rejected: "Rejected",
+      draft: "剧本创作",
+      processing: "分镜设计",
+      review: "审核确认",
+      approved: "导出交付",
+      rejected: "阻塞中",
     };
-    return map[status] || status || "Unknown";
+    return map[status] || status || "未知";
   }
 
   function escapeHtml(text) {
@@ -153,5 +199,14 @@
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;");
   }
-})();
 
+  function formatDate(iso) {
+    if (!iso) return "待确认";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "待确认";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+})();

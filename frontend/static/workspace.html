@@ -14,79 +14,68 @@
         <span class="brand-badge">AI</span>
         <span class="brand-name">AI短剧协作台</span>
       </div>
-      <nav class="top-nav">
+      <nav class="top-nav" aria-label="主导航">
         <button id="nav-workspace" class="top-nav-btn active" type="button">工作台</button>
         <button id="nav-project" class="top-nav-btn" type="button">项目管理</button>
         <button id="nav-render" class="top-nav-btn" type="button">生成队列</button>
         <button id="nav-review" class="top-nav-btn" type="button">审核中心</button>
       </nav>
       <div class="top-right">
-        <span class="avatar">U</span>
+        <span id="top-avatar" class="avatar">U</span>
         <span id="top-username" class="username">User</span>
         <button id="btn-logout" class="logout-btn" type="button">退出</button>
       </div>
     </header>
 
-    <section class="hero">
+    <section class="hero" aria-label="欢迎信息">
       <div>
-        <h1 id="workspace-welcome">Welcome back, User</h1>
-        <p id="workspace-subtitle">You are currently participating in 0 projects</p>
+        <h1 id="workspace-welcome">欢迎回来，User</h1>
+        <p id="workspace-subtitle">今天共参与 0 个项目</p>
       </div>
       <button id="btn-refresh" class="refresh-btn" type="button">刷新</button>
     </section>
 
-    <section class="stats-grid">
-      <article class="stat-card">
+    <section class="stats-grid" aria-label="统计数据">
+      <button class="stat-card stat-action" id="stat-action-project" type="button">
         <div class="stat-title">参与项目</div>
         <div id="stat-total" class="stat-num">0</div>
         <div class="stat-desc">个在制作中</div>
-      </article>
-      <article class="stat-card">
+      </button>
+      <button class="stat-card stat-action" id="stat-action-task" type="button">
         <div class="stat-title">待处理任务</div>
         <div id="stat-pending-tasks" class="stat-num">0</div>
         <div class="stat-desc">需要您的处理</div>
-      </article>
-      <article class="stat-card">
+      </button>
+      <button class="stat-card stat-action" id="stat-action-review" type="button">
         <div class="stat-title">待审核</div>
         <div id="stat-review" class="stat-num">0</div>
         <div class="stat-desc">分镜待审批</div>
-      </article>
-      <article class="stat-card">
+      </button>
+      <button class="stat-card stat-action" id="stat-action-done" type="button">
         <div class="stat-title">已完成项目</div>
         <div id="stat-done" class="stat-num">0</div>
         <div class="stat-desc">精彩短剧上线</div>
-      </article>
+      </button>
     </section>
 
-    <section class="workspace-layout">
-      <article class="panel">
-        <div class="panel-head">
+    <section class="workspace-layout" aria-label="任务与项目">
+      <article class="panel panel-tasks">
+        <header class="panel-head">
           <h2 class="panel-title">我的任务</h2>
-          <span id="tasks-count-pill" class="pill">0 pending</span>
-        </div>
-        <ul id="task-list" class="list">
-          <li class="item-card">
-            <h3 class="item-title">No tasks</h3>
-            <p class="item-subtitle">Tasks assigned to you will appear here.</p>
-          </li>
-        </ul>
+          <span id="tasks-count-pill" class="pill">0 个待处理</span>
+        </header>
+        <ul id="task-list" class="list task-list" aria-label="任务列表"></ul>
       </article>
 
-      <article class="panel">
-        <div class="panel-head">
+      <article class="panel panel-projects">
+        <header class="panel-head">
           <h2 class="panel-title">最近项目</h2>
           <button id="btn-new-project" class="primary-btn" type="button">+ 新建项目</button>
-        </div>
-        <ul id="recent-project-list" class="list">
-          <li class="item-card">
-            <h3 class="item-title">No projects</h3>
-            <p class="item-subtitle">Create your first project from the button above.</p>
-          </li>
-        </ul>
+        </header>
+        <ul id="recent-project-list" class="list project-list" aria-label="项目列表"></ul>
       </article>
     </section>
   </main>
-
   <script src="js/api.js"></script>
   <script src="js/common.js"></script>
   <script src="js/workspace.js"></script>
