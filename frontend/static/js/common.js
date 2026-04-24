@@ -76,6 +76,14 @@
   }
 
   function bindKnownHeaderActions() {
+    // New semantic layout ids
+    bindClick("#nav-workspace", () => routeTo("workspace"));
+    bindClick("#nav-project", () => routeTo("project"));
+    bindClick("#nav-render", () => routeTo("render"));
+    bindClick("#nav-review", () => routeTo("review"));
+    bindClick("#btn-logout", () => logout());
+
+    // Legacy pixso ids
     bindClick("#2_37", () => routeTo("workspace"));
     bindClick("#2_39", () => routeTo("project"));
     bindClick("#2_41", () => routeTo("render"));
@@ -97,6 +105,8 @@
       document.querySelectorAll("#username, #welcomeName, [data-bind='username']").forEach((el) => {
         el.textContent = name;
       });
+      const semanticTopUser = document.querySelector("#top-username");
+      if (semanticTopUser) semanticTopUser.textContent = name;
       const topUser = document.querySelector("#2_49");
       if (topUser) topUser.textContent = name;
     } catch {
@@ -139,4 +149,3 @@
     }
   });
 })();
-

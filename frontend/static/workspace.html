@@ -3,299 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作台 - AI短剧协作台</title>
+  <title>工作台 - AI短剧协作平台</title>
   <link rel="stylesheet" href="css/font.css">
-  <link rel="stylesheet" href="css/workspace.css">
+  <link rel="stylesheet" href="css/workspace-modern.css">
 </head>
 <body>
-<div class="container">
-  <!-- 顶部导航栏 -->
-  <header class="header">
-    <div class="header-content">
-      <!-- Logo -->
-      <a href="/" class="logo">
-        <span class="logo-icon">AI</span>
-        <span class="logo-text">AI短剧协作台</span>
-      </a>
-      
-      <!-- 主导航 -->
-      <nav class="main-nav">
-        <a href="/workspace.html" class="nav-item active">工作台</a>
-        <a href="/projects.html" class="nav-item">项目管理</a>
-        <a href="/render-queue.html" class="nav-item">生成队列</a>
-        <a href="/review.html" class="nav-item">审核中心</a>
+  <main class="workspace-page">
+    <header class="workspace-topbar">
+      <div class="brand">
+        <span class="brand-badge">AI</span>
+        <span class="brand-name">AI短剧协作台</span>
+      </div>
+      <nav class="top-nav">
+        <button id="nav-workspace" class="top-nav-btn active" type="button">工作台</button>
+        <button id="nav-project" class="top-nav-btn" type="button">项目管理</button>
+        <button id="nav-render" class="top-nav-btn" type="button">生成队列</button>
+        <button id="nav-review" class="top-nav-btn" type="button">审核中心</button>
       </nav>
-      
-      <!-- 用户信息 -->
-      <div class="user-section">
-        <div class="user-avatar">张</div>
-        <span class="user-name">张导演</span>
-        <button class="btn-logout" id="btnLogout">退出</button>
+      <div class="top-right">
+        <span class="avatar">U</span>
+        <span id="top-username" class="username">User</span>
+        <button id="btn-logout" class="logout-btn" type="button">退出</button>
       </div>
-    </div>
-  </header>
-  <!-- 欢迎区域 -->
-  <section class="welcome-section">
-    <div class="welcome-content">
-      <div class="welcome-text">
-        <h1 class="welcome-title">欢迎回来，<span id="userName">张导演</span></h1>
-        <p class="welcome-subtitle">今天是您加入平台的第 <span id="joinDays">128</span> 天，共参与 <span id="projectCount">12</span> 个项目</p>
-      </div>
-      <button class="btn-refresh" id="btnRefresh">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M13.65 2.35A7.958 7.958 0 0 0 8 0C3.58 0 0 3.58 0 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z"/>
-        </svg>
-        刷新
-      </button>
-    </div>
-  </section>
-  <!-- 统计卡片 -->
-  <section class="stats-section">
-    <div class="stats-grid">
-      <a href="/projects.html?filter=active" class="stat-card">
-        <h3 class="stat-label">参与项目</h3>
-        <div class="stat-value">12</div>
-        <p class="stat-desc">个在制作中</p>
-      </a>
-      
-      <a href="/tasks.html?filter=pending" class="stat-card">
-        <h3 class="stat-label">待处理任务</h3>
-        <div class="stat-value">5</div>
-        <p class="stat-desc">需要您的处理</p>
-      </a>
-      
-      <a href="/review.html?filter=pending" class="stat-card">
-        <h3 class="stat-label">待审核</h3>
-        <div class="stat-value">3</div>
-        <p class="stat-desc">分镜待审批</p>
-      </a>
-      
-      <a href="/projects.html?filter=completed" class="stat-card">
-        <h3 class="stat-label">已完成项目</h3>
-        <div class="stat-value">8</div>
-        <p class="stat-desc">精彩短剧上线</p>
-      </a>
-    </div>
-  </section>
-    <div id="2_81" class="Pixso-frame-2_81">
-      <div class="frame-content-2_81">
-        <div id="2_82" class="Pixso-frame-2_82">
-          <div class="frame-content-2_82">
-            <div id="2_83" class="Pixso-frame-2_83">
-              <div class="frame-content-2_83">
-                <p id="2_84" class="Pixso-paragraph-2_84">我的任务</p>
-                <div id="2_85" class="Pixso-frame-2_85"></div>
-                <div id="2_86" class="stroke-wrapper-2_86">
-                  <div class="Pixso-frame-2_86">
-                    <div class="frame-content-2_86">
-                      <p id="2_87" class="Pixso-paragraph-2_87">5 个待处理</p>
-                    </div>
-                  </div>
-                  <div class="stroke-2_86"></div>
-                </div>
-              </div>
-            </div>
-            <div id="2_88" class="Pixso-frame-2_88">
-              <div class="frame-content-2_88">
-                <div id="2_89" class="stroke-wrapper-2_89">
-                  <div class="Pixso-frame-2_89">
-                    <div class="frame-content-2_89">
-                      <div id="2_90" class="Pixso-rectangle-2_90"></div>
-                      <div id="2_91" class="Pixso-frame-2_91">
-                        <div class="frame-content-2_91">
-                          <p id="2_92" class="Pixso-paragraph-2_92">寻龙少年·第一集</p>
-                          <div id="2_93" class="Pixso-frame-2_93"></div>
-                          <div id="2_94" class="stroke-wrapper-2_94">
-                            <div class="Pixso-frame-2_94">
-                              <div class="frame-content-2_94">
-                                <p id="2_95" class="Pixso-paragraph-2_95">进行中</p>
-                              </div>
-                            </div>
-                            <div class="stroke-2_94"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <p id="2_96" class="Pixso-paragraph-2_96">剧本创作工位 · 剧情第1-3幕初稿待完善，导演已反馈修改意见</p>
-                      <div id="2_97" class="Pixso-frame-2_97">
-                        <div class="frame-content-2_97">
-                          <div id="2_98" class="Pixso-vector-2_98"></div>
-                          <p id="2_101" class="Pixso-paragraph-2_101">截止：2024-03-15</p>
-                          <div id="2_102" class="Pixso-frame-2_102"></div>
-                          <p id="2_103" class="Pixso-paragraph-2_103">进入工位</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="stroke-2_89"></div>
-                </div>
-                <div id="2_104" class="stroke-wrapper-2_104">
-                  <div class="Pixso-frame-2_104">
-                    <div class="frame-content-2_104">
-                      <div id="2_105" class="Pixso-frame-2_105">
-                        <div class="frame-content-2_105">
-                          <p id="2_106" class="Pixso-paragraph-2_106">星际逃亡·第三集</p>
-                          <div id="2_107" class="Pixso-frame-2_107"></div>
-                          <div id="2_108" class="stroke-wrapper-2_108">
-                            <div class="Pixso-frame-2_108">
-                              <div class="frame-content-2_108">
-                                <p id="2_109" class="Pixso-paragraph-2_109">待处理</p>
-                              </div>
-                            </div>
-                            <div class="stroke-2_108"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <p id="2_110" class="Pixso-paragraph-2_110">分镜设计工位 · 第15-22场分镜图需要重新绘制并配置提示词</p>
-                      <div id="2_111" class="Pixso-frame-2_111">
-                        <div class="frame-content-2_111">
-                          <div id="2_112" class="Pixso-vector-2_112"></div>
-                          <p id="2_115" class="Pixso-paragraph-2_115">截止：2024-03-18</p>
-                          <div id="2_116" class="Pixso-frame-2_116"></div>
-                          <p id="2_117" class="Pixso-paragraph-2_117">进入工位</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="stroke-2_104"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="2_118" class="Pixso-frame-2_118">
-          <div class="frame-content-2_118">
-            <div id="2_119" class="Pixso-frame-2_119">
-              <div class="frame-content-2_119">
-                <p id="2_120" class="Pixso-paragraph-2_120">最近项目</p>
-                <div id="2_121" class="Pixso-frame-2_121"></div>
-                <div id="2_122" class="Pixso-frame-2_122">
-                  <div class="frame-content-2_122">
-                    <div id="2_123" class="Pixso-vector-2_123"></div>
-                    <p id="2_126" class="Pixso-paragraph-2_126">新建项目</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div id="2_127" class="stroke-wrapper-2_127">
-              <div class="Pixso-frame-2_127">
-                <div class="frame-content-2_127">
-                  <div id="2_128" class="Pixso-frame-2_128">
-                    <div id="2_129" class="Pixso-frame-2_129">
-                      <div id="2_130" class="stroke-wrapper-2_130">
-                        <div class="Pixso-rectangle-2_130"></div>
-                        <div class="stroke-2_130"></div>
-                      </div>
-                      <div id="2_131" class="Pixso-vector-2_131"></div>
-                      <div id="2_132" class="Pixso-vector-2_132"></div>
-                      <div id="2_133" class="Pixso-vector-2_133"></div>
-                      <div id="2_134" class="Pixso-vector-2_134"></div>
-                      <div id="2_135" class="Pixso-vector-2_135"></div>
-                      <div id="2_136" class="Pixso-vector-2_136"></div>
-                      <div id="2_137" class="Pixso-vector-2_137"></div>
-                    </div>
-                  </div>
-                  <div id="2_138" class="Pixso-frame-2_138">
-                    <div class="frame-content-2_138">
-                      <p id="2_139" class="Pixso-paragraph-2_139">寻龙少年·热血奇遇记</p>
-                      <p id="2_140" class="Pixso-paragraph-2_140">古风热血 · 12集 · 分镜阶段</p>
-                    </div>
-                  </div>
-                  <div id="2_141" class="stroke-wrapper-2_141">
-                    <div class="Pixso-frame-2_141">
-                      <div class="frame-content-2_141">
-                        <p id="2_142" class="Pixso-paragraph-2_142">制作中</p>
-                      </div>
-                    </div>
-                    <div class="stroke-2_141"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="stroke-2_127"></div>
-            </div>
-            <div id="2_143" class="stroke-wrapper-2_143">
-              <div class="Pixso-frame-2_143">
-                <div class="frame-content-2_143">
-                  <div id="2_144" class="Pixso-frame-2_144">
-                    <div id="2_145" class="Pixso-frame-2_145">
-                      <div id="2_146" class="stroke-wrapper-2_146">
-                        <div class="Pixso-rectangle-2_146"></div>
-                        <div class="stroke-2_146"></div>
-                      </div>
-                      <div id="2_147" class="Pixso-vector-2_147"></div>
-                      <div id="2_148" class="Pixso-vector-2_148"></div>
-                      <div id="2_149" class="Pixso-vector-2_149"></div>
-                      <div id="2_150" class="Pixso-vector-2_150"></div>
-                      <div id="2_151" class="Pixso-vector-2_151"></div>
-                      <div id="2_152" class="Pixso-vector-2_152"></div>
-                      <div id="2_153" class="Pixso-vector-2_153"></div>
-                    </div>
-                  </div>
-                  <div id="2_154" class="Pixso-frame-2_154">
-                    <div class="frame-content-2_154">
-                      <p id="2_155" class="Pixso-paragraph-2_155">星际逃亡·迷途天际</p>
-                      <p id="2_156" class="Pixso-paragraph-2_156">科幻悬疑 · 8集 · 生成队列</p>
-                    </div>
-                  </div>
-                  <div id="2_157" class="stroke-wrapper-2_157">
-                    <div class="Pixso-frame-2_157">
-                      <div class="frame-content-2_157">
-                        <p id="2_158" class="Pixso-paragraph-2_158">生成中</p>
-                      </div>
-                    </div>
-                    <div class="stroke-2_157"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="stroke-2_143"></div>
-            </div>
-            <div id="2_159" class="stroke-wrapper-2_159">
-              <div class="Pixso-frame-2_159">
-                <div class="frame-content-2_159">
-                  <div id="2_160" class="Pixso-frame-2_160">
-                    <div id="2_161" class="Pixso-frame-2_161">
-                      <div id="2_162" class="stroke-wrapper-2_162">
-                        <div class="Pixso-rectangle-2_162"></div>
-                        <div class="stroke-2_162"></div>
-                      </div>
-                      <div id="2_163" class="Pixso-vector-2_163"></div>
-                      <div id="2_164" class="Pixso-vector-2_164"></div>
-                      <div id="2_165" class="Pixso-vector-2_165"></div>
-                      <div id="2_166" class="Pixso-vector-2_166"></div>
-                      <div id="2_167" class="Pixso-vector-2_167"></div>
-                      <div id="2_168" class="Pixso-vector-2_168"></div>
-                      <div id="2_169" class="Pixso-vector-2_169"></div>
-                    </div>
-                  </div>
-                  <div id="2_170" class="Pixso-frame-2_170">
-                    <div class="frame-content-2_170">
-                      <p id="2_171" class="Pixso-paragraph-2_171">都市情缘·她的选择</p>
-                      <p id="2_172" class="Pixso-paragraph-2_172">都市爱情 · 6集 · 审核阶段</p>
-                    </div>
-                  </div>
-                  <div id="2_173" class="stroke-wrapper-2_173">
-                    <div class="Pixso-frame-2_173">
-                      <div class="frame-content-2_173">
-                        <p id="2_174" class="Pixso-paragraph-2_174">待审核</p>
-                      </div>
-                    </div>
-                    <div class="stroke-2_173"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="stroke-2_159"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+    </header>
 
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-<script src="js/animation.js"></script>
-<script src="js/api.js"></script>
-<script src="js/common.js"></script>
-<script src="js/workspace.js"></script>
-<script src="js/page-tools.js"></script>
+    <section class="hero">
+      <div>
+        <h1 id="workspace-welcome">Welcome back, User</h1>
+        <p id="workspace-subtitle">You are currently participating in 0 projects</p>
+      </div>
+      <button id="btn-refresh" class="refresh-btn" type="button">刷新</button>
+    </section>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-title">参与项目</div>
+        <div id="stat-total" class="stat-num">0</div>
+        <div class="stat-desc">个在制作中</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-title">待处理任务</div>
+        <div id="stat-pending-tasks" class="stat-num">0</div>
+        <div class="stat-desc">需要您的处理</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-title">待审核</div>
+        <div id="stat-review" class="stat-num">0</div>
+        <div class="stat-desc">分镜待审批</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-title">已完成项目</div>
+        <div id="stat-done" class="stat-num">0</div>
+        <div class="stat-desc">精彩短剧上线</div>
+      </article>
+    </section>
+
+    <section class="workspace-layout">
+      <article class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">我的任务</h2>
+          <span id="tasks-count-pill" class="pill">0 pending</span>
+        </div>
+        <ul id="task-list" class="list">
+          <li class="item-card">
+            <h3 class="item-title">No tasks</h3>
+            <p class="item-subtitle">Tasks assigned to you will appear here.</p>
+          </li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">最近项目</h2>
+          <button id="btn-new-project" class="primary-btn" type="button">+ 新建项目</button>
+        </div>
+        <ul id="recent-project-list" class="list">
+          <li class="item-card">
+            <h3 class="item-title">No projects</h3>
+            <p class="item-subtitle">Create your first project from the button above.</p>
+          </li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/workspace.js"></script>
+  <script src="js/page-tools.js"></script>
 </body>
 </html>
+

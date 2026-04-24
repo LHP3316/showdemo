@@ -1,9 +1,7 @@
 /**
- * Workspace page (vanilla JS)
+ * Workspace page (semantic layout)
  */
 (function () {
-  const RECENT_CARD_IDS = ["#2_127", "#2_143", "#2_159"];
-
   document.addEventListener("DOMContentLoaded", async function () {
     if (!window.CommonApp || !window.api) return;
     const ok = await CommonApp.ensureSession(true);
@@ -14,40 +12,15 @@
   });
 
   function bindActions() {
-    bindClick("#2_57", loadDashboard); // refresh
-
-    // Header nav (strong binding inside workspace)
-    bindClick("#2_37", () => go("workspace"));
-    bindClick("#2_39", () => openProjectOrFallback());
-    bindClick("#2_41", () => go("render"));
-    bindClick("#2_43", () => go("review"));
-    bindClick("#2_50", () => CommonApp.logout());
-
-    // Task cards -> workbenches
-    bindClick("#2_89", () => go("script"));
-    bindClick("#2_104", () => go("storyboard"));
-    bindClick("#2_103", () => go("script"));
-    bindClick("#2_117", () => go("storyboard"));
-
-    // Recent project cards
-    bindClick("#2_127", () => openRecentProject(0));
-    bindClick("#2_143", () => openRecentProject(1));
-    bindClick("#2_159", () => openRecentProject(2));
-
-    // New project
-    bindClick("#2_122", createProjectAndOpen);
+    bindClick("#btn-refresh", loadDashboard);
+    bindClick("#btn-new-project", createProjectAndOpen);
+    bindClick("#nav-project", openProjectOrFallback);
   }
 
   function bindClick(selector, handler) {
     const node = document.querySelector(selector);
     if (!node) return;
-    if (node.dataset.wsBound === "1") return;
-    node.dataset.wsBound = "1";
-    node.style.cursor = "pointer";
-    node.addEventListener("click", function (event) {
-      event.preventDefault();
-      handler();
-    });
+    node.addEventListener("click", handler);
   }
 
   async function loadDashboard() {
@@ -64,70 +37,107 @@
       const pending = (pendingRes && pendingRes.data && pendingRes.data.items) || [];
       const projects = (projectsRes && projectsRes.data && projectsRes.data.items) || [];
 
-      setText("#2_67", String(stats.total || 0));
-      setText("#2_79", String(stats.approved || 0));
+      setText("#stat-total", String(stats.total || 0));
+      setText("#stat-done", String(stats.approved || 0));
 
       const todoCount = tasks.filter((t) => t.status === "pending" || t.status === "processing").length;
-      setText("#2_71", String(todoCount));
-      setText("#2_87", `${todoCount} pending`);
-      setText("#2_75", String(pending.length));
+      setText("#stat-pending-tasks", String(todoCount));
+      setText("#tasks-count-pill", `${todoCount} pending`);
+      setText("#stat-review", String(pending.length));
 
       localStorage.setItem("workspaceProjectsCache", JSON.stringify(projects));
       if (projects[0] && projects[0].id) {
         localStorage.setItem("activeProjectId", String(projects[0].id));
       }
 
-      patchRecentProjects(projects);
       patchWelcome(stats.total || 0);
+      patchTaskList(tasks);
+      patchRecentProjects(projects);
     } catch (err) {
       console.error("Failed to load workspace data:", err);
+      setText("#workspace-subtitle", "Load failed. Please refresh.");
     }
   }
 
   function patchWelcome(totalProjects) {
     const user = safeJson(localStorage.getItem("user"));
     const name = (user && (user.display_name || user.username)) || "User";
-    setText("#2_55", `Welcome back, ${name}`);
-    setText("#2_56", `You are currently participating in ${totalProjects} projects`);
-    setText("#2_49", name);
+    setText("#workspace-welcome", `Welcome back, ${name}`);
+    setText("#workspace-subtitle", `You are currently participating in ${totalProjects} projects`);
+    setText("#top-username", name);
+  }
+
+  function patchTaskList(tasks) {
+    const list = document.querySelector("#task-list");
+    if (!list) return;
+
+    const show = tasks.filter((t) => t.status === "pending" || t.status === "processing").slice(0, 4);
+    if (!show.length) {
+      list.innerHTML = `
+        <li class="item-card">
+          <h3 class="item-title">No tasks</h3>
+          <p class="item-subtitle">Tasks assigned to you will appear here.</p>
+        </li>
+      `;
+      return;
+    }
+
+    list.innerHTML = show.map((t) => {
+      const route = t.task_type === "img2video" ? "render" : "script";
+      return `
+        <li class="item-card">
+          <h3 class="item-title">Task #${t.id}</h3>
+          <p class="item-subtitle">Type: ${escapeHtml(t.task_type)} - Status: ${escapeHtml(t.status)}</p>
+          <div class="item-foot">
+            <span class="pill">${escapeHtml(String(t.progress || 0))}%</span>
+            <button class="link-btn" data-route="${route}" type="button">进入工位</button>
+          </div>
+        </li>
+      `;
+    }).join("");
+
+    list.querySelectorAll(".link-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const route = btn.getAttribute("data-route");
+        if (route && window.CommonApp) CommonApp.routeTo(route);
+      });
+    });
   }
 
   function patchRecentProjects(projects) {
-    const map = [
-      { title: "#2_139", subtitle: "#2_140", status: "#2_142" },
-      { title: "#2_155", subtitle: "#2_156", status: "#2_158" },
-      { title: "#2_171", subtitle: "#2_172", status: "#2_174" },
-    ];
+    const list = document.querySelector("#recent-project-list");
+    if (!list) return;
 
-    map.forEach((slot, index) => {
-      const item = projects[index];
-      if (!item) return;
-      setText(slot.title, item.title || "Untitled project");
-      setText(
-        slot.subtitle,
-        `${item.genre || "N/A"} - ${item.episode_count || 0} eps - ${mapProjectStatus(item.status)}`
-      );
-      setText(slot.status, mapProjectStatus(item.status));
+    const show = projects.slice(0, 5);
+    if (!show.length) {
+      list.innerHTML = `
+        <li class="item-card">
+          <h3 class="item-title">No projects</h3>
+          <p class="item-subtitle">Create your first project from the button above.</p>
+        </li>
+      `;
+      return;
+    }
+
+    list.innerHTML = show.map((p) => `
+      <li class="item-card">
+        <h3 class="item-title">${escapeHtml(p.title || "Untitled project")}</h3>
+        <p class="item-subtitle">${escapeHtml(p.genre || "N/A")} - ${p.episode_count || 0} eps - ${escapeHtml(mapProjectStatus(p.status))}</p>
+        <div class="item-foot">
+          <span class="pill">${escapeHtml(mapProjectStatus(p.status))}</span>
+          <button class="link-btn js-open-project" data-id="${p.id}" type="button">打开项目</button>
+        </div>
+      </li>
+    `).join("");
+
+    list.querySelectorAll(".js-open-project").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const id = btn.getAttribute("data-id");
+        if (!id) return;
+        localStorage.setItem("activeProjectId", String(id));
+        window.location.href = `project.html?id=${id}`;
+      });
     });
-
-    RECENT_CARD_IDS.forEach((id, idx) => {
-      const node = document.querySelector(id);
-      if (!node) return;
-      node.dataset.projectIndex = String(idx);
-    });
-  }
-
-  function openRecentProject(index) {
-    const list = safeJson(localStorage.getItem("workspaceProjectsCache")) || [];
-    const item = list[index];
-    if (!item || !item.id) return;
-    localStorage.setItem("activeProjectId", String(item.id));
-    window.location.href = `project.html?id=${item.id}`;
-  }
-
-  function go(route) {
-    if (!window.CommonApp) return;
-    CommonApp.routeTo(route);
   }
 
   function openProjectOrFallback() {
@@ -161,7 +171,6 @@
       window.location.href = `project.html?id=${projectId}`;
     } catch (err) {
       console.error("Create project failed:", err);
-      // Non-director users may not have create permission; fallback to project page.
       openProjectOrFallback();
     }
   }
@@ -193,6 +202,13 @@
 
   function pad2(v) {
     return String(v).padStart(2, "0");
+  }
+
+  function escapeHtml(text) {
+    return String(text || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
   }
 })();
 

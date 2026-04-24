@@ -7,6 +7,7 @@
   const passwordInput = document.getElementById("password");
   const errorMessage = document.getElementById("errorMessage");
   const loginBtn = document.getElementById("loginBtn");
+  const defaultBtnText = (loginBtn && loginBtn.textContent ? loginBtn.textContent.trim() : "") || "Login";
 
   if (!form || !usernameInput || !passwordInput || !loginBtn) {
     return;
@@ -56,7 +57,7 @@
 
   function setLoading(loading) {
     loginBtn.disabled = loading;
-    loginBtn.textContent = loading ? "Signing in..." : "Login";
+    loginBtn.textContent = loading ? "登录中..." : defaultBtnText;
   }
 
   function showError(message) {
@@ -69,4 +70,3 @@
     errorMessage.classList.remove("show");
   }
 })();
-
