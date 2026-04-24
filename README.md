@@ -78,6 +78,31 @@ chmod +x start stop status restart scripts/uvicorn_helpers.sh
 - 后端：`8000`
 - 前端静态服务：`5500`
 
+## Gradio 网页创作台（推荐）
+
+如果你不想用“后台管理感”的界面，可以直接使用 Gradio 版本：
+
+1. 安装依赖：
+```bash
+cd /mnt/d/Project/showdemo/backend
+pip install -r requirements.txt
+```
+
+2. 启动后端 API（新终端）：
+```bash
+cd /mnt/d/Project/showdemo
+./start
+```
+
+3. 启动 Gradio 创作台：
+```bash
+cd /mnt/d/Project/showdemo
+./start_gradio
+```
+
+4. 浏览器访问：
+- `http://localhost:7860`
+
 ## 前端启动
 
 可以直接用静态服务器打开 `frontend/` 目录，例如：

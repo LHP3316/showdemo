@@ -7,3 +7,5 @@ passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 pydantic-settings==2.1.0
 python-multipart==0.0.6
+requests==2.32.3
+gradio==5.38.2
