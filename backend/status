@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+BACKEND_DIR="$(cd "${SCRIPT_PATH%/*}" && pwd)"
+ROOT_DIR="$(cd "${BACKEND_DIR}/.." && pwd)"
+
+"${ROOT_DIR}/status"

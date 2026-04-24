@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="576" viewBox="0 0 1024 576" fill="none">
+  <rect width="1024" height="576" fill="#121A2F"/>
+  <rect x="120" y="96" width="784" height="384" rx="16" fill="#1A2542" stroke="#31406E"/>
+  <circle cx="512" cy="250" r="56" fill="#2B3A64"/>
+  <path d="M485 250l42 24v-48l-42 24z" fill="#89A5FF"/>
+  <text x="512" y="352" fill="#A8B4D8" font-size="24" text-anchor="middle" font-family="Arial, sans-serif">Scene Preview Placeholder</text>
+</svg>

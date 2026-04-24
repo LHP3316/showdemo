@@ -1,0 +1,36 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env / local env files
+.env
+.venv/
+venv/
+env/
+
+# Runtime and logs
+.runtime/
+logs/
+*.log
+*.pid
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build / temp
+dist/
+build/
+tmp/
+temp/
+
+# Local tool folders
+.agents/
+.codex/
+
+# Keep sample env
+!backend/.env.example

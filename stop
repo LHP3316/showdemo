@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+ROOT_DIR="$(cd "${SCRIPT_PATH%/*}" && pwd)"
+. "${ROOT_DIR}/scripts/uvicorn_helpers.sh"
+
+stop_all

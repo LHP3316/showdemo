@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI短剧协作台 - 前端工作流平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: "#0b1020", 800: "#121a2f", 700: "#18223e", 600: "#2a3558", 500: "#3a4670" }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="bg-dark-900 text-gray-200 antialiased">
+  <div id="app" class="flex h-screen">
+    <aside id="sidebar"></aside>
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header id="header"></header>
+      <main id="main-content" class="flex-1 overflow-auto p-6"></main>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/store/authStore.js"></script>
+  <script src="js/store/workspaceStore.js"></script>
+  <script src="js/store/projectStore.js"></script>
+  <script src="js/store/taskStore.js"></script>
+
+  <script src="js/components/modal.js"></script>
+  <script src="js/components/Stepper.js"></script>
+  <script src="js/components/TaskCard.js"></script>
+  <script src="js/components/Timeline.js"></script>
+  <script src="js/components/SceneCard.js"></script>
+  <script src="js/components/AssigneePill.js"></script>
+  <script src="js/components/ReviewDialog.js"></script>
+  <script src="js/components/sidebar.js"></script>
+  <script src="js/components/header.js"></script>
+
+  <script src="js/pages/login.js"></script>
+  <script src="js/pages/workspace.js"></script>
+  <script src="js/pages/project-cockpit.js"></script>
+  <script src="js/pages/script-workbench.js"></script>
+  <script src="js/pages/storyboard-workbench.js"></script>
+  <script src="js/pages/render-queue.js"></script>
+  <script src="js/pages/review-session.js"></script>
+  <script src="js/pages/export-center.js"></script>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
