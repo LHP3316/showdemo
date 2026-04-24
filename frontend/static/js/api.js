@@ -1,88 +1,80 @@
 /**
- * API 配置
- * 说明: 配置后端 API 地址和通用请求方法
+ * API client for static pages
  */
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = "http://localhost:8000";
 
-/**
- * 发送 API 请求
- * @param {string} url - 请求路径
- * @param {object} options - 请求配置
- * @returns {Promise} - 返回 Promise
- */
-function apiRequest(url, options = {}) {
-  const token = localStorage.getItem('token');
-  
-  const defaultOptions = {
-    method: 'GET',
+async function apiRequest(url, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const config = {
+    method: "GET",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
     },
+    ...options,
   };
 
   if (token) {
-    defaultOptions.headers['Authorization'] = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
-  const config = { ...defaultOptions, ...options };
-  
-  if (config.data) {
+  if (config.data !== undefined) {
     config.body = JSON.stringify(config.data);
+    delete config.data;
   }
 
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  const fullUrl = url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
 
-  return fetch(fullUrl, config)
-    .then(response => {
-      if (response.status === 401) {
-        // 排除登录接口的 401
-        if (!url.includes('/auth/login')) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login.html';
-        }
-        throw new Error('登录已过期，请重新登录');
-      }
-      
-      if (!response.ok) {
-        return response.json().then(data => {
-          throw new Error(data.detail || '请求失败');
-        });
-      }
-      
-      return response.json();
-    });
+  let response;
+  try {
+    response = await fetch(fullUrl, config);
+  } catch (e) {
+    throw new Error("Cannot connect to backend server");
+  }
+
+  if (response.status === 401) {
+    if (!url.includes("/auth/login")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    }
+    throw new Error("Session expired, please login again");
+  }
+
+  let payload = null;
+  const text = await response.text();
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = { message: text };
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error((payload && (payload.detail || payload.message)) || "Request failed");
+  }
+
+  return payload;
 }
 
-// API 方法封装
 const api = {
-  // GET 请求
   get(url, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    const fullUrl = queryString ? `${url}?${queryString}` : url;
-    return apiRequest(fullUrl);
+    const query = new URLSearchParams(params).toString();
+    return apiRequest(query ? `${url}?${query}` : url);
   },
 
-  // POST 请求
   post(url, data = {}) {
-    return apiRequest(url, {
-      method: 'POST',
-      data,
-    });
+    return apiRequest(url, { method: "POST", data });
   },
 
-  // PUT 请求
   put(url, data = {}) {
-    return apiRequest(url, {
-      method: 'PUT',
-      data,
-    });
+    return apiRequest(url, { method: "PUT", data });
   },
 
-  // DELETE 请求
   delete(url) {
-    return apiRequest(url, {
-      method: 'DELETE',
-    });
+    return apiRequest(url, { method: "DELETE" });
   },
 };
+

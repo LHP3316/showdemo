@@ -1,78 +1,72 @@
 /**
- * 认证逻辑
- * 说明: 处理用户登录、登出、权限检查
+ * Login page auth (vanilla JS)
  */
+(function () {
+  const form = document.getElementById("loginForm");
+  const usernameInput = document.getElementById("username");
+  const passwordInput = document.getElementById("password");
+  const errorMessage = document.getElementById("errorMessage");
+  const loginBtn = document.getElementById("loginBtn");
 
-$(document).ready(function() {
-  // 检查是否已登录
+  if (!form || !usernameInput || !passwordInput || !loginBtn) {
+    return;
+  }
+
   checkAuth();
+  form.addEventListener("submit", onSubmit);
 
-  // 登录表单提交
-  $('#loginForm').on('submit', function(e) {
-    e.preventDefault();
-    
-    const username = $('#username').val().trim();
-    const password = $('#password').val().trim();
-    
+  async function checkAuth() {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const me = await api.get("/auth/me");
+      localStorage.setItem("user", JSON.stringify(me));
+      window.location.href = "workspace.html";
+    } catch {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+  }
+
+  async function onSubmit(event) {
+    event.preventDefault();
+
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
     if (!username || !password) {
-      showError('请输入账号和密码');
+      showError("Please enter username and password");
       return;
     }
 
-    // 禁用按钮
-    const $btn = $('#loginBtn');
-    $btn.prop('disabled', true).text('登录中...');
     hideError();
+    setLoading(true);
 
-    // 发送登录请求
-    api.post('/auth/login', { username, password })
-      .then(data => {
-        // 保存 token 和用户信息
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // 跳转到工作台
-        window.location.href = '/workspace.html';
-      })
-      .catch(error => {
-        showError(error.message || '登录失败，请检查账号和密码');
-        $btn.prop('disabled', false).text('立即登录');
-      });
-  });
-});
-
-/**
- * 检查登录状态
- */
-function checkAuth() {
-  const token = localStorage.getItem('token');
-  const user = localStorage.getItem('user');
-  
-  if (token && user) {
-    // 已登录，跳转到工作台
-    window.location.href = '/workspace.html';
+    try {
+      const data = await api.post("/auth/login", { username, password });
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.location.href = "workspace.html";
+    } catch (err) {
+      showError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
-/**
- * 显示错误信息
- */
-function showError(message) {
-  $('#errorMessage').text(message).addClass('show');
-}
+  function setLoading(loading) {
+    loginBtn.disabled = loading;
+    loginBtn.textContent = loading ? "Signing in..." : "Login";
+  }
 
-/**
- * 隐藏错误信息
- */
-function hideError() {
-  $('#errorMessage').removeClass('show');
-}
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add("show");
+  }
 
-/**
- * 登出
- */
-function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  window.location.href = '/login.html';
-}
+  function hideError() {
+    errorMessage.textContent = "";
+    errorMessage.classList.remove("show");
+  }
+})();
+

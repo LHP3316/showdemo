@@ -27,3 +27,173 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
+
+.static-global-footer {
+  width: 100%;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #9ca3af;
+  background: rgba(18, 18, 26, 0.85);
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.static-login-form {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.static-login-input {
+  pointer-events: auto;
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 15, 24, 0.9);
+  color: #fff;
+  font-size: 14px;
+  padding: 0 14px;
+  outline: none;
+}
+
+#2_20 {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.static-login-input:focus {
+  border-color: rgba(255, 215, 0, 0.65);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.18);
+}
+
+.static-login-error {
+  min-height: 18px;
+  color: #f87171;
+  font-size: 12px;
+  opacity: 0;
+}
+
+.static-login-error.show {
+  opacity: 1;
+}
+
+.func-dock {
+  position: fixed;
+  right: 14px;
+  top: 84px;
+  width: 360px;
+  max-height: calc(100vh - 110px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 215, 0, 0.28);
+  border-radius: 12px;
+  background: rgba(16, 16, 24, 0.96);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.func-dock__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  color: #fff;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.func-dock__header button {
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 8px;
+  background: transparent;
+  color: #facc15;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.func-dock__body {
+  overflow: auto;
+  padding: 10px 12px;
+  color: #d1d5db;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.func-dock__body h4 {
+  color: #f8fafc;
+  margin: 8px 0 6px;
+  font-size: 12px;
+}
+
+.func-dock__status {
+  padding: 8px 12px;
+  color: #86efac;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  font-size: 12px;
+}
+
+.func-dock__status.is-error {
+  color: #fca5a5;
+}
+
+.func-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.func-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.func-list li {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.func-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.func-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 8px;
+  background: rgba(255, 215, 0, 0.1);
+  color: #fde68a;
+  padding: 5px 10px;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.func-input {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  color: #f1f5f9;
+  padding: 6px 8px;
+}
+
+.func-textarea {
+  min-height: 120px;
+}

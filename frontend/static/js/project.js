@@ -1,65 +1,102 @@
 /**
- * 项目详情页逻辑
+ * Project detail page
  */
+$(document).ready(async function () {
+  const ok = await CommonApp.ensureSession(true);
+  if (!ok) return;
 
-$(document).ready(function() {
-  checkLogin();
-  loadUserInfo();
-  loadProjectInfo();
+  bindQuickLinks();
+  await loadProjectInfo();
 });
 
-function checkLogin() {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/login.html';
-  }
+function bindQuickLinks() {
+  $("#2_285").css("cursor", "pointer").on("click", function () {
+    const id = getProjectId();
+    window.location.href = id ? `script.html?id=${id}` : "script.html";
+  });
+
+  $("#2_296").css("cursor", "pointer").on("click", function () {
+    const id = getProjectId();
+    window.location.href = id ? `storyboard.html?id=${id}` : "storyboard.html";
+  });
+
+  $("#2_299").css("cursor", "pointer").on("click", function () {
+    const id = getProjectId();
+    window.location.href = id ? `render.html?id=${id}` : "render.html";
+  });
 }
 
-function loadUserInfo() {
+async function loadProjectInfo() {
   try {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
-      $('#username').text(user.display_name || user.username);
+    let id = getProjectId();
+    if (!id) {
+      const projectsRes = await api.get("/projects?size=1");
+      const first = projectsRes && projectsRes.data && projectsRes.data.items ? projectsRes.data.items[0] : null;
+      if (!first || !first.id) return;
+      id = String(first.id);
+      localStorage.setItem("activeProjectId", id);
+      window.history.replaceState({}, "", `project.html?id=${id}`);
     }
-  } catch (e) {
-    console.error('解析用户信息失败:', e);
+
+    const [projectRes, tasksRes, assetsRes] = await Promise.all([
+      api.get(`/projects/${id}`),
+      api.get("/api/tasks/tasks?size=200"),
+      api.get(`/api/export/export/project/${id}/assets`),
+    ]);
+
+    const project = projectRes && projectRes.data ? projectRes.data : {};
+    const tasks = tasksRes && tasksRes.data && tasksRes.data.items ? tasksRes.data.items : [];
+    const assets = assetsRes && assetsRes.data ? assetsRes.data : {};
+
+    patchProjectHeader(project);
+    patchProgress(project, tasks);
+    patchAssets(assets);
+  } catch (err) {
+    console.error("Failed to load project detail:", err);
   }
 }
 
-function loadProjectInfo() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const projectId = urlParams.get('id');
-  
-  if (projectId) {
-    // 模拟加载项目数据（后续可替换为真实 API 调用）
-    const projects = {
-      '1': {
-        title: '都市情感剧《爱的抉择》',
-        desc: '现代都市爱情题材，讲述职场女性在事业与爱情之间的抉择',
-        episodes: 20,
-        current: 15,
-        status: '制作中'
-      },
-      '2': {
-        title: '科幻短剧《星际迷航》',
-        desc: '未来世界，人类探索外太空的神秘冒险故事',
-        episodes: 12,
-        current: 10,
-        status: '待审核'
-      },
-      '3': {
-        title: '古装剧《大明风华》',
-        desc: '明朝历史背景，展现宫廷斗争与人物命运',
-        episodes: 30,
-        current: 30,
-        status: '已完成'
-      }
-    };
-    
-    const project = projects[projectId];
-    if (project) {
-      $('#projectTitle').text(project.title);
-      $('#projectDesc').text(project.desc);
-    }
+function getProjectId() {
+  const queryId = new URLSearchParams(window.location.search).get("id");
+  if (queryId) {
+    localStorage.setItem("activeProjectId", String(queryId));
+    return String(queryId);
   }
+  return localStorage.getItem("activeProjectId");
+}
+
+function patchProjectHeader(project) {
+  const title = project.title || "Untitled project";
+  const meta = `${project.genre || "N/A"} - ${project.episode_count || 0} eps`;
+
+  $("#2_182").text(title);
+  $("#2_184").text(title);
+  $("#2_186").text(meta);
+}
+
+function patchProgress(project, tasks) {
+  const sceneCount = Number(project.scene_count || 0);
+  const done = tasks.filter((t) => t.status === "success").length;
+  const total = Math.max(sceneCount, done, 1);
+  const percent = Math.min(100, Math.floor((done / total) * 100));
+
+  $("#2_220").text(`${percent}%`);
+  $("#2_223").text(`${mapProjectStatus(project.status)} - EP ${project.current_episode || 1}/${project.episode_count || 0}`);
+}
+
+function patchAssets(assets) {
+  $("#2_246").text(String(assets.images_count || 0));
+  $("#2_249").text(String(assets.videos_count || 0));
+  $("#2_252").text(String(assets.total_scenes || 0));
+}
+
+function mapProjectStatus(status) {
+  const map = {
+    draft: "Draft",
+    processing: "In progress",
+    review: "In review",
+    approved: "Done",
+    rejected: "Rejected",
+  };
+  return map[status] || status || "Unknown";
 }

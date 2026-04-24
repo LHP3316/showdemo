@@ -3,72 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登录 - AI短剧协作台</title>
+  <title>Login - AI Studio Platform</title>
   <link rel="stylesheet" href="css/font.css">
-  <link rel="stylesheet" href="css/login.css">
+  <style>
+    .login-page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.14), transparent 40%),
+                  radial-gradient(circle at 80% 80%, rgba(0, 140, 255, 0.12), transparent 36%),
+                  #0a0a0f;
+    }
+
+    .login-card {
+      width: min(420px, 92vw);
+      border: 1px solid rgba(255, 215, 0, 0.25);
+      border-radius: 16px;
+      background: rgba(18, 18, 26, 0.95);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      padding: 24px;
+    }
+
+    .login-title {
+      color: #fff;
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .login-subtitle {
+      color: #9ca3af;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .login-label {
+      color: #e5e7eb;
+      font-size: 13px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 46px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #0a0a0f;
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ffd700, #ffb700);
+      margin-top: 4px;
+    }
+
+    .login-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <div id="2_2" class="Pixso-frame-2_2">
-    <div id="2_3" class="Pixso-rectangle-2_3"></div>
-    <div id="2_4" class="Pixso-rectangle-2_4"></div>
-    <div id="2_5" class="stroke-wrapper-2_5">
-      <div class="Pixso-frame-2_5">
-        <div class="frame-content-2_5">
-          <div id="2_6" class="Pixso-rectangle-2_6"></div>
-          <div id="2_7" class="Pixso-frame-2_7">
-            <div class="frame-content-2_7">
-              <div id="2_8" class="Pixso-frame-2_8">
-                <p id="2_9" class="Pixso-paragraph-2_9">AI</p>
-              </div>
-              <p id="2_10" class="Pixso-paragraph-2_10">AI短剧协作台</p>
-              <p id="2_11" class="Pixso-paragraph-2_11">电影工业级创作协作平台</p>
-            </div>
-          </div>
-          <div id="2_12" class="Pixso-frame-2_12">
-            <div class="frame-content-2_12">
-              <p id="2_13" class="Pixso-paragraph-2_13">账号</p>
-              <div id="2_14" class="stroke-wrapper-2_14">
-                <div class="Pixso-frame-2_14">
-                  <div class="frame-content-2_14">
-                    <p id="2_15" class="Pixso-paragraph-2_15">请输入您的账号</p>
-                  </div>
-                </div>
-                <div class="stroke-2_14"></div>
-              </div>
-              <p id="2_16" class="Pixso-paragraph-2_16">密码</p>
-              <div id="2_17" class="stroke-wrapper-2_17">
-                <div class="Pixso-frame-2_17">
-                  <div class="frame-content-2_17">
-                    <p id="2_18" class="Pixso-paragraph-2_18">请输入您的密码</p>
-                  </div>
-                </div>
-                <div class="stroke-2_17"></div>
-              </div>
-            </div>
-          </div>
-          <div id="2_19" class="Pixso-frame-2_19"></div>
-          <div id="2_20" class="Pixso-frame-2_20">
-            <div class="frame-content-2_20">
-              <p id="2_21" class="Pixso-paragraph-2_21">立即登录</p>
-            </div>
-          </div>
-          <div id="2_22" class="Pixso-frame-2_22"></div>
-          <p id="2_23" class="Pixso-paragraph-2_23">忘记密码？  联系管理员</p>
-          <div id="2_24" class="Pixso-frame-2_24"></div>
-          <div id="2_25" class="Pixso-rectangle-2_25"></div>
-          <div id="2_26" class="Pixso-frame-2_26"></div>
-          <p id="2_27" class="Pixso-paragraph-2_27">© 2024 AI短剧协作台  ·  专业版 v2.1</p>
-        </div>
-      </div>
-      <div class="stroke-2_5"></div>
-    </div>
-  </div>
-</div>
+  <main class="login-page">
+    <section class="login-card">
+      <h1 class="login-title">AI Studio Login</h1>
+      <p class="login-subtitle">Use your account from backend user table</p>
 
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-<script src="js/animation.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/api.js"></script>
+      <form id="loginForm" class="static-login-form" autocomplete="on">
+        <label class="login-label" for="username">Username</label>
+        <input id="username" name="username" class="static-login-input" type="text" autocomplete="username" placeholder="Username">
+
+        <label class="login-label" for="password">Password</label>
+        <input id="password" name="password" class="static-login-input" type="password" autocomplete="current-password" placeholder="Password">
+
+        <div id="errorMessage" class="static-login-error"></div>
+        <button id="loginBtn" class="login-btn" type="submit">Login</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/auth.js"></script>
 </body>
 </html>
+
