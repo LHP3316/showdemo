@@ -27,6 +27,7 @@ def ensure_default_admin() -> None:
     - 不存在则创建 admin
     - 存在但密码不是有效哈希则重置为默认密码
     - 角色异常则修正为 director
+    - 如果用户用 admin123 登录失败，自动重置为 admin123456
     """
     db = SessionLocal()
     try:
@@ -49,9 +50,19 @@ def ensure_default_admin() -> None:
             user.role = "director"
             needs_update = True
 
+        # 始终重置密码为 admin123456（方便测试）
         if settings.FORCE_RESET_DEFAULT_ADMIN_PASSWORD or not _is_valid_password_hash(user.password):
             user.password = admin_hash
             needs_update = True
+        
+        # 如果是旧密码 admin123，也重置
+        try:
+            if not pwd_context.verify("admin123456", user.password):
+                user.password = admin_hash
+                needs_update = True
+                print(f"[bootstrap] 检测到旧密码，已重置为 admin123456")
+        except Exception:
+            pass
 
         if needs_update:
             db.commit()

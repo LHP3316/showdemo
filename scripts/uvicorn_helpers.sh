@@ -5,7 +5,7 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 ROOT_DIR="$(cd "${SCRIPT_PATH%/*}/.." && pwd)"
 
 BACKEND_DIR="${ROOT_DIR}/backend"
-FRONTEND_DIR="${ROOT_DIR}/frontend"
+FRONTEND_DIR="${ROOT_DIR}/frontend/static"
 RUNTIME_DIR="${ROOT_DIR}/.runtime"
 LOG_DIR="${ROOT_DIR}/logs"
 BACKEND_PID_FILE="${RUNTIME_DIR}/backend.pid"
@@ -119,26 +119,32 @@ start_frontend() {
     return 0
   fi
 
-  local py_cmd
-  if command -v python3 >/dev/null 2>&1; then
-    py_cmd="python3"
-  elif command -v python >/dev/null 2>&1; then
-    py_cmd="python"
-  else
-    echo "未找到 python3/python，无法启动 frontend 静态服务。"
+  # 检查 Python3 是否可用
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "未找到 python3，请先安装 Python"
     return 1
+  fi
+
+  # 先清理可能占用 5500 端口的旧进程
+  echo "正在检查端口 ${FRONTEND_PORT}..."
+  local old_pid
+  old_pid=$(lsof -ti:${FRONTEND_PORT} 2>/dev/null || true)
+  if [ -n "${old_pid}" ]; then
+    echo "发现占用端口 ${FRONTEND_PORT} 的进程，正在清理..."
+    kill -9 ${old_pid} 2>/dev/null || true
+    sleep 1
   fi
 
   (
     cd "${FRONTEND_DIR}"
-    nohup ${py_cmd} -m http.server "${FRONTEND_PORT}" >>"${FRONTEND_LOG_FILE}" 2>&1 &
+    nohup python3 -m http.server "${FRONTEND_PORT}" >>"${FRONTEND_LOG_FILE}" 2>&1 &
     echo $! >"${FRONTEND_PID_FILE}"
   )
 
-  sleep 1
+  sleep 2
   if is_pid_running "${FRONTEND_PID_FILE}"; then
     echo "frontend 启动成功，PID: $(cat "${FRONTEND_PID_FILE}")"
-    echo "地址: http://${HOST}:${FRONTEND_PORT}"
+    echo "地址: http://localhost:${FRONTEND_PORT}"
     echo "日志: ${FRONTEND_LOG_FILE}"
   else
     echo "frontend 启动失败，请检查日志: ${FRONTEND_LOG_FILE}"
@@ -148,27 +154,40 @@ start_frontend() {
 
 stop_frontend() {
   cleanup_stale_pid "${FRONTEND_PID_FILE}"
-  if ! is_pid_running "${FRONTEND_PID_FILE}"; then
-    echo "frontend 未运行"
-    return 0
+  
+  # 先杀掉保存的 PID
+  if is_pid_running "${FRONTEND_PID_FILE}"; then
+    local pid
+    pid="$(cat "${FRONTEND_PID_FILE}")"
+    kill "${pid}" >/dev/null 2>&1 || true
+    
+    for _ in {1..20}; do
+      if ! kill -0 "${pid}" >/dev/null 2>&1; then
+        rm -f "${FRONTEND_PID_FILE}"
+        break
+      fi
+      sleep 0.2
+    done
+    
+    # 强制杀掉
+    kill -9 "${pid}" >/dev/null 2>&1 || true
   fi
-
-  local pid
-  pid="$(cat "${FRONTEND_PID_FILE}")"
-  kill "${pid}" >/dev/null 2>&1 || true
-
-  for _ in {1..20}; do
-    if ! kill -0 "${pid}" >/dev/null 2>&1; then
-      rm -f "${FRONTEND_PID_FILE}"
-      echo "frontend 已停止"
-      return 0
-    fi
-    sleep 0.2
-  done
-
-  kill -9 "${pid}" >/dev/null 2>&1 || true
+  
+  # 清理占用端口的前端进程（Vite 子进程）
+  local port_pids
+  port_pids=$(lsof -ti:${FRONTEND_PORT} 2>/dev/null || true)
+  if [ -n "${port_pids}" ]; then
+    echo "发现占用端口 ${FRONTEND_PORT} 的进程，正在清理..."
+    echo "${port_pids}" | xargs kill -9 2>/dev/null || true
+    sleep 1
+  fi
+  
+  # 也清理可能存在的 node 进程
+  pkill -f "npm run dev" 2>/dev/null || true
+  pkill -f "vite" 2>/dev/null || true
+  
   rm -f "${FRONTEND_PID_FILE}"
-  echo "frontend 已强制停止"
+  echo "frontend 已停止"
 }
 
 status_frontend() {
