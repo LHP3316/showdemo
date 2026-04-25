@@ -87,7 +87,12 @@ class Scene(Base):
     dialogue = Column(Text, comment='角色台词内容')
     camera_angle = Column(String(100), comment='镜头语言/机位描述（如：特写、远景、俯拍、跟拍等）')
     emotion = Column(String(100), comment='情绪氛围描述（如：紧张、温馨、悬疑、悲伤等）')
-    prompt = Column(Text, comment='AI生成提示词（英文，用于文生图/图生视频）')
+    # 兼容字段：历史上图片/视频共用一套 prompt；新逻辑使用 image_prompt / video_prompt
+    prompt = Column(Text, comment='AI生成提示词（兼容旧字段；新字段见 image_prompt/video_prompt）')
+    image_prompt = Column(Text, comment='文生图提示词（image 专用）')
+    video_prompt = Column(Text, comment='图生视频提示词（video 专用）')
+    image_config = Column(JSON, comment='文生图参数配置（JSON，可选）')
+    video_config = Column(JSON, comment='图生视频参数配置（JSON，可选）')
     image_url = Column(Text, comment='AI生成的分镜图片URL')
     video_url = Column(Text, comment='AI生成的分镜视频URL')
     duration = Column(Integer, comment='视频时长（单位：秒）')

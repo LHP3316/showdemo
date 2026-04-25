@@ -55,6 +55,10 @@ async def list_scenes(
                 "camera_angle": scene.camera_angle,
                 "emotion": scene.emotion,
                 "prompt": scene.prompt,
+                "image_prompt": scene.image_prompt,
+                "video_prompt": scene.video_prompt,
+                "image_config": scene.image_config,
+                "video_config": scene.video_config,
                 "image_url": scene.image_url,
                 "video_url": scene.video_url,
                 "duration": scene.duration,
@@ -90,6 +94,10 @@ async def get_scene(
             "camera_angle": scene.camera_angle,
             "emotion": scene.emotion,
             "prompt": scene.prompt,
+            "image_prompt": scene.image_prompt,
+            "video_prompt": scene.video_prompt,
+            "image_config": scene.image_config,
+            "video_config": scene.video_config,
             "image_url": scene.image_url,
             "video_url": scene.video_url,
             "duration": scene.duration,
@@ -123,6 +131,10 @@ async def create_scene(
         camera_angle=body.camera_angle,
         emotion=body.emotion,
         prompt=body.prompt,
+        image_prompt=body.image_prompt,
+        video_prompt=body.video_prompt,
+        image_config=body.image_config,
+        video_config=body.video_config,
         status="pending",
     )
     db.add(scene)
@@ -190,13 +202,13 @@ async def generate_image(
     scene = _get_scene_or_404(scene_id, db)
     
     # 验证 prompt
-    prompt = scene.prompt or scene.scene_description
+    prompt = scene.image_prompt or scene.prompt or scene.scene_description
     if not prompt:
         raise HTTPException(status_code=400, detail="分镜缺少Prompt或场景描述")
     
     try:
         # 调用AI服务生成图片
-        image_url = await geeknow_service.text_to_image(prompt)
+        image_url = await geeknow_service.text_to_image(prompt, config=scene.image_config or None)
         
         # 更新分镜
         scene.image_url = image_url
@@ -237,7 +249,8 @@ async def generate_video(
     
     try:
         # 调用AI服务生成视频
-        video_url = await geeknow_service.image_to_video(scene.image_url, scene.prompt)
+        vprompt = scene.video_prompt or scene.prompt
+        video_url = await geeknow_service.image_to_video(scene.image_url, vprompt, config=scene.video_config or None)
         
         # 更新分镜
         scene.video_url = video_url
@@ -275,9 +288,9 @@ async def batch_generate_images(
     
     for scene in scenes:
         try:
-            prompt = scene.prompt or scene.scene_description
+            prompt = scene.image_prompt or scene.prompt or scene.scene_description
             if prompt:
-                image_url = await geeknow_service.text_to_image(prompt)
+                image_url = await geeknow_service.text_to_image(prompt, config=scene.image_config or None)
                 scene.image_url = image_url
                 scene.status = "image_ready"
                 success_count += 1
@@ -314,7 +327,8 @@ async def batch_generate_videos(
     
     for scene in scenes:
         try:
-            video_url = await geeknow_service.image_to_video(scene.image_url, scene.prompt)
+            vprompt = scene.video_prompt or scene.prompt
+            video_url = await geeknow_service.image_to_video(scene.image_url, vprompt, config=scene.video_config or None)
             scene.video_url = video_url
             scene.status = "video_ready"
             success_count += 1

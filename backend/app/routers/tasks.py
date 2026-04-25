@@ -52,11 +52,12 @@ async def create_task(
     try:
         if task_data.task_type == "text2img":
             # 文生图
-            if not scene.prompt:
+            prompt = scene.image_prompt or scene.prompt
+            if not prompt:
                 raise HTTPException(status_code=400, detail="分镜缺少Prompt")
             
             # 调用AI服务生成图片
-            image_url = await AIService.generate_image(scene.prompt)
+            image_url = await AIService.generate_image(prompt)
             
             # 更新分镜和任务状态
             scene.image_url = image_url

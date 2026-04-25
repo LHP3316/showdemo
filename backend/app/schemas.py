@@ -130,7 +130,12 @@ class SceneBase(BaseModel):
     dialogue: Optional[str] = Field(None, description="台词内容")
     camera_angle: Optional[str] = Field(None, max_length=100, description="镜头语言")
     emotion: Optional[str] = Field(None, max_length=100, description="情绪描述")
-    prompt: Optional[str] = Field(None, description="AI生成提示词")
+    # 兼容字段：历史上图片/视频共用 prompt；新逻辑使用 image_prompt/video_prompt
+    prompt: Optional[str] = Field(None, description="AI生成提示词（兼容旧字段）")
+    image_prompt: Optional[str] = Field(None, description="文生图提示词（image 专用）")
+    video_prompt: Optional[str] = Field(None, description="图生视频提示词（video 专用）")
+    image_config: Optional[Any] = Field(None, description="文生图参数配置（JSON，可选）")
+    video_config: Optional[Any] = Field(None, description="图生视频参数配置（JSON，可选）")
 
 class SceneCreate(SceneBase):
     """创建分镜请求"""
@@ -145,7 +150,11 @@ class SceneUpdate(BaseModel):
     dialogue: Optional[str] = Field(None, description="台词内容")
     camera_angle: Optional[str] = Field(None, max_length=100, description="镜头语言")
     emotion: Optional[str] = Field(None, max_length=100, description="情绪描述")
-    prompt: Optional[str] = Field(None, description="AI提示词")
+    prompt: Optional[str] = Field(None, description="AI提示词（兼容旧字段）")
+    image_prompt: Optional[str] = Field(None, description="文生图提示词（image 专用）")
+    video_prompt: Optional[str] = Field(None, description="图生视频提示词（video 专用）")
+    image_config: Optional[Any] = Field(None, description="文生图参数配置（JSON，可选）")
+    video_config: Optional[Any] = Field(None, description="图生视频参数配置（JSON，可选）")
     image_url: Optional[str] = Field(None, description="图片URL")
     video_url: Optional[str] = Field(None, description="视频URL")
     duration: Optional[int] = Field(None, ge=0, description="视频时长（秒）")

@@ -2,11 +2,21 @@
  * Storyboard page runtime
  */
 (function () {
+  const EMPTY_PREVIEW_CANDIDATES = ["tu.png", "/static/tu.png"];
+  let emptyPreviewImageUrl = "tu.png";
+  let previewRequestId = 0;
+  let activeMediaTab = "image";
   let projectId = null;
   let scenes = [];
   let activeSceneId = null;
+  let projectEpisode = 1;
 
   document.addEventListener("DOMContentLoaded", async function () {
+    await resolveEmptyPreviewImageUrl();
+    const previewWrap = document.querySelector(".sb-preview");
+    const previewImage = document.querySelector("#sb-preview-image");
+    if (previewWrap && previewImage) applyEmptyPreview(previewWrap, previewImage);
+
     if (!window.CommonApp || !window.api) return;
     const ok = await CommonApp.ensureSession(true);
     if (!ok) return;
@@ -28,6 +38,8 @@
     bindClick("#btn-submit-review", submitProjectForReview);
     bindClick("#btn-gen-image", function () { generateImage(activeSceneId); });
     bindClick("#btn-gen-video", function () { generateVideo(activeSceneId); });
+    bindClick("#tab-image", function () { switchMediaTab("image"); });
+    bindClick("#tab-video", function () { switchMediaTab("video"); });
 
     const characters = document.querySelector("#scene-characters");
     if (characters) characters.addEventListener("blur", syncActiveEdits);
@@ -41,21 +53,22 @@
     const emotion = document.querySelector("#scene-emotion");
     if (emotion) emotion.addEventListener("blur", syncActiveEdits);
 
-    const prompt = document.querySelector("#scene-prompt");
-    if (prompt) prompt.addEventListener("blur", syncActiveEdits);
+    const imagePrompt = document.querySelector("#scene-image-prompt");
+    if (imagePrompt) imagePrompt.addEventListener("blur", syncActiveEdits);
+    const videoPrompt = document.querySelector("#scene-video-prompt");
+    if (videoPrompt) videoPrompt.addEventListener("blur", syncActiveEdits);
 
-    const cameraAngle = document.querySelector("#scene-camera-angle");
-    if (cameraAngle) cameraAngle.addEventListener("change", syncActiveEdits);
-
-    document.querySelectorAll(".sb-chip").forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        document.querySelectorAll(".sb-chip").forEach(function (n) {
-          n.classList.remove("is-active");
-        });
-        chip.classList.add("is-active");
-        syncActiveEdits();
+    const previewImage = document.querySelector("#sb-preview-image");
+    if (previewImage) {
+      previewImage.addEventListener("error", function () {
+        if (String(previewImage.src || "").includes(emptyPreviewImageUrl)) return;
+        // 远端图地址失效时，回退到本地空态图，避免出现黑框/破图
+        updatePreviewImage("");
       });
-    });
+    }
+
+    // 镜头语言已从 UI 移除（不再绑定 chip 事件）
+    switchMediaTab("image");
   }
 
   function bindClick(selector, handler) {
@@ -90,10 +103,10 @@
       }
     }
 
-    const title = project && project.title ? project.title : "寻龙少年";
-    const episode = Number(project && project.episode_number ? project.episode_number : 6);
+    const title = project && project.title ? project.title : "未命名项目";
+    projectEpisode = Number(project && project.current_episode ? project.current_episode : 1);
     setText("#storyboard-page-title", "分镜工位");
-    setText("#storyboard-page-subtitle", `${title} · 第${episode}集`);
+    setText("#storyboard-page-subtitle", `${title} · 第${projectEpisode}集`);
 
     scenes = remoteScenes.length ? remoteScenes.map(normalizeScene) : buildFallbackScenes();
     renderSceneList();
@@ -103,15 +116,19 @@
   }
 
   function normalizeScene(scene) {
+    const legacyPrompt = String(scene.prompt || "");
     return {
       id: String(scene.id),
+      episode_number: Number(scene.episode_number || 1),
       scene_index: Number(scene.scene_index || 0),
       characters: String(scene.characters || ""),
       scene_description: String(scene.scene_description || ""),
       dialogue: String(scene.dialogue || ""),
       camera_angle: String(scene.camera_angle || ""),
       emotion: String(scene.emotion || ""),
-      prompt: String(scene.prompt || ""),
+      prompt: legacyPrompt,
+      image_prompt: String(scene.image_prompt || legacyPrompt || ""),
+      video_prompt: String(scene.video_prompt || legacyPrompt || ""),
       status: String(scene.status || "待开始"),
       // 真实数据：无内容就不显示预览（不强行塞占位图）
       image_url: scene.image_url ? String(scene.image_url) : "",
@@ -132,6 +149,7 @@
       const t = seed[(i - 1) % seed.length];
       out.push({
         id: `demo-${i}`,
+        episode_number: 1,
         scene_index: i,
         characters: "主角",
         scene_description: t.desc,
@@ -139,6 +157,8 @@
         camera_angle: i % 3 === 0 ? "中景" : i % 2 === 0 ? "特写" : "全景",
         emotion: "自然",
         prompt: "medium shot, Chinese ancient warrior walking toward mysterious stone stele, tall ancient trees, golden light through leaves, cinematic atmosphere, 8k quality",
+        image_prompt: "medium shot, Chinese ancient warrior walking toward mysterious stone stele, tall ancient trees, golden light through leaves, cinematic atmosphere, 8k quality",
+        video_prompt: "cinematic movement, slow dolly in, subtle wind, film grain",
         status: i <= 2 ? "已完成" : i === 3 ? "进行中" : "待开始",
         image_url: "assets/image/preview.png",
         video_url: "",
@@ -193,28 +213,20 @@
     const scene = scenes.find((s) => String(s.id) === activeSceneId);
     if (!scene) return;
 
-    setText("#sb-editor-title", `Scene ${pad2(scene.scene_index)} · 第6集`);
-    setText("#sb-active-tag", `Scene ${pad2(scene.scene_index)} / 第6集`);
+    const ep = Number(scene.episode_number || projectEpisode || 1);
+    setText("#sb-editor-title", `Scene ${pad2(scene.scene_index)} · 第${ep}集`);
+    setText("#sb-active-tag", `Scene ${pad2(scene.scene_index)} / 第${ep}集`);
     setText("#sb-active-desc", scene.scene_description);
     setValue("#scene-characters", scene.characters);
     setValue("#scene-description", scene.scene_description);
     setValue("#scene-dialogue", scene.dialogue);
     setValue("#scene-emotion", scene.emotion);
-    setValue("#scene-prompt", scene.prompt);
-    setValue("#scene-camera-angle", pickCameraAddon(scene.camera_angle));
-    activateShotChip(pickCameraChip(scene.camera_angle));
+    setValue("#scene-image-prompt", scene.image_prompt || scene.prompt);
+    setValue("#scene-video-prompt", scene.video_prompt || scene.prompt);
+    // 镜头语言已移除：不再切换 chip
 
-    // 中间预览：没有内容则隐藏（避免显示空/脏画面）
-    const previewWrap = document.querySelector(".sb-preview");
-    const img = document.querySelector("#sb-preview-image");
-    const hasImage = !!(scene.image_url && String(scene.image_url).trim());
-    const hasVideo = !!(scene.video_url && String(scene.video_url).trim());
-    const shouldShow = hasImage || hasVideo;
-    if (previewWrap) previewWrap.toggleAttribute("hidden", !shouldShow);
-    if (img) {
-      if (hasImage) img.src = scene.image_url;
-      else img.removeAttribute("src");
-    }
+    // 中间预览：优先显示生成图；加载失败或无图时回退 tu.png
+    updatePreviewImage(scene.image_url);
   }
 
   function stepScene(delta) {
@@ -233,49 +245,13 @@
     scene.scene_description = valueOf("#scene-description");
     scene.dialogue = valueOf("#scene-dialogue");
     scene.emotion = valueOf("#scene-emotion");
-    scene.prompt = valueOf("#scene-prompt");
-    scene.camera_angle = mergeCameraAngle(activeShotType(), valueOf("#scene-camera-angle"));
-
+    scene.image_prompt = valueOf("#scene-image-prompt");
+    scene.video_prompt = valueOf("#scene-video-prompt");
+    // 兼容旧字段：继续写入 prompt（默认使用图片提示词）
+    scene.prompt = scene.image_prompt;
     await persistScene(scene);
     renderSceneList();
     selectScene(scene.id, { scrollIntoView: false });
-  }
-
-  function activateShotChip(shot) {
-    document.querySelectorAll(".sb-chip").forEach(function (chip) {
-      chip.classList.toggle("is-active", chip.getAttribute("data-shot") === shot);
-    });
-  }
-
-  function activeShotType() {
-    const active = document.querySelector(".sb-chip.is-active");
-    return active ? String(active.getAttribute("data-shot")) : "中景";
-  }
-
-  function mergeCameraAngle(base, addon) {
-    const a = String(addon || "").trim();
-    const b = String(base || "").trim();
-    if (!a) return b;
-    if (!b) return a;
-    if (a === b) return b;
-    return `${b},${a}`;
-  }
-
-  function pickCameraChip(cameraAngle) {
-    const text = String(cameraAngle || "");
-    if (text.includes("特写")) return "特写";
-    if (text.includes("全景")) return "全景";
-    if (text.includes("中景")) return "中景";
-    return "中景";
-  }
-
-  function pickCameraAddon(cameraAngle) {
-    const text = String(cameraAngle || "");
-    const options = ["远景", "近景", "俯拍", "仰拍", "跟拍"];
-    for (const o of options) {
-      if (text.includes(o)) return o;
-    }
-    return "";
   }
 
   async function persistScene(scene) {
@@ -290,6 +266,8 @@
         camera_angle: scene.camera_angle,
         emotion: scene.emotion,
         prompt: scene.prompt,
+        image_prompt: scene.image_prompt,
+        video_prompt: scene.video_prompt,
       });
       setText("#storyboard-status", "已保存");
     } catch (e) {
@@ -349,6 +327,96 @@
   function setText(selector, text) {
     const n = document.querySelector(selector);
     if (n) n.textContent = text;
+  }
+
+  function switchMediaTab(tab) {
+    activeMediaTab = tab === "video" ? "video" : "image";
+    const isImage = activeMediaTab === "image";
+
+    toggleClass("#tab-image", "is-active", isImage);
+    toggleClass("#tab-video", "is-active", !isImage);
+    setAriaSelected("#tab-image", isImage);
+    setAriaSelected("#tab-video", !isImage);
+
+    const imageField = document.querySelector("#field-image-prompt");
+    const videoField = document.querySelector("#field-video-prompt");
+    if (imageField) imageField.hidden = !isImage;
+    if (videoField) videoField.hidden = isImage;
+
+    const imageBtn = document.querySelector("#btn-gen-image");
+    const videoBtn = document.querySelector("#btn-gen-video");
+    if (imageBtn) imageBtn.hidden = !isImage;
+    if (videoBtn) videoBtn.hidden = isImage;
+  }
+
+  function updatePreviewImage(imageUrl) {
+    const previewWrap = document.querySelector(".sb-preview");
+    const img = document.querySelector("#sb-preview-image");
+    if (!previewWrap || !img) return;
+    const url = String(imageUrl || "").trim();
+    const reqId = ++previewRequestId;
+    if (!url) {
+      applyEmptyPreview(previewWrap, img);
+      return;
+    }
+
+    // 仅在远端图预加载成功后再切换，避免先显示错误大图再回退空态
+    const probe = new Image();
+    probe.onload = function () {
+      if (reqId !== previewRequestId) return;
+      applyRealPreview(previewWrap, img, url);
+    };
+    probe.onerror = function () {
+      if (reqId !== previewRequestId) return;
+      applyEmptyPreview(previewWrap, img);
+    };
+    probe.src = url;
+  }
+
+  function applyEmptyPreview(previewWrap, img) {
+    previewWrap.removeAttribute("hidden");
+    previewWrap.classList.add("is-empty");
+    img.classList.add("is-empty");
+    img.src = emptyPreviewImageUrl;
+  }
+
+  function applyRealPreview(previewWrap, img, url) {
+    previewWrap.removeAttribute("hidden");
+    previewWrap.classList.remove("is-empty");
+    img.classList.remove("is-empty");
+    img.src = url;
+  }
+
+  async function resolveEmptyPreviewImageUrl() {
+    for (const candidate of EMPTY_PREVIEW_CANDIDATES) {
+      const ok = await canLoadImage(candidate);
+      if (ok) {
+        emptyPreviewImageUrl = candidate;
+        return;
+      }
+    }
+    emptyPreviewImageUrl = EMPTY_PREVIEW_CANDIDATES[0];
+  }
+
+  function canLoadImage(url) {
+    return new Promise(function (resolve) {
+      const probe = new Image();
+      probe.onload = function () { resolve(true); };
+      probe.onerror = function () { resolve(false); };
+      probe.src = url;
+    });
+  }
+
+  function toggleClass(selector, className, enabled) {
+    const n = document.querySelector(selector);
+    if (!n) return;
+    if (enabled) n.classList.add(className);
+    else n.classList.remove(className);
+  }
+
+  function setAriaSelected(selector, selected) {
+    const n = document.querySelector(selector);
+    if (n) n.setAttribute("aria-selected", selected ? "true" : "false");
   }
 
   function pad2(n) {
