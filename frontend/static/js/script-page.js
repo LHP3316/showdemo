@@ -5,6 +5,8 @@
   let projectId = null;
   let currentUser = null;
   let importSubmitting = false;
+  let decomposeSubmitting = false;
+  let _progressNode = null;
 
   document.addEventListener("DOMContentLoaded", async function () {
     if (!window.CommonApp || !window.api) return;
@@ -170,15 +172,97 @@
 
   async function decomposeScript() {
     if (!projectId) return;
+    if (decomposeSubmitting) return;
     try {
+      decomposeSubmitting = true;
+      // 先自动保存草稿（不弹“已保存”，避免打断流程）
+      await saveScriptSilently();
+
+      const progress = openProgress("AI分镜中", "正在自动保存草稿并调用大模型拆解分镜。\n耗时取决于文本长度与模型响应速度，请稍候…");
+      progress.setPercent(18);
+      progress.setDetail("步骤 1/2：草稿已保存，开始拆解…");
+
       await api.post(`/projects/${projectId}/decompose`);
-      setStatus("AI decompose completed");
-      await loadData();
+      progress.setPercent(100);
+      progress.setDetail("步骤 2/2：拆解完成，正在进入分镜页面…");
+      setStatus("AI storyboard completed");
+
+      // 直接进入分镜页面
+      localStorage.setItem("activeProjectId", String(projectId));
+      window.location.href = `storyboard.html?id=${projectId}`;
     } catch (e) {
       const msg = e.message || "Decompose failed";
       setStatus(msg, true);
       if (window.CommonApp && typeof CommonApp.showError === "function") CommonApp.showError(msg);
+      closeProgress();
+    } finally {
+      decomposeSubmitting = false;
     }
+  }
+
+  async function saveScriptSilently() {
+    if (!projectId) return;
+    const editor = document.querySelector("#script-editor");
+    const projectIntroNode = document.querySelector("#script-project-intro-input");
+    const episodeTitleNode = document.querySelector("#script-title-input");
+    const episodeSummaryNode = document.querySelector("#script-episode-summary-input");
+    if (!editor) return;
+    await api.put(`/projects/${projectId}`, {
+      script: editor.value,
+      description: projectIntroNode ? String(projectIntroNode.value || "").trim() : undefined,
+      episode_title: episodeTitleNode ? String(episodeTitleNode.value || "").trim() : undefined,
+      episode_summary: episodeSummaryNode ? String(episodeSummaryNode.value || "").trim() : undefined,
+    });
+  }
+
+  function openProgress(title, message) {
+    closeProgress();
+    const overlay = document.createElement("div");
+    overlay.className = "script-progress-overlay";
+    overlay.innerHTML = `
+      <section class="script-progress-panel" role="dialog" aria-modal="true" aria-labelledby="script-progress-title">
+        <h2 class="script-progress-title" id="script-progress-title">${escapeHtml(title || "处理中")}</h2>
+        <p class="script-progress-sub" id="script-progress-sub">${escapeHtml(message || "")}</p>
+        <div class="script-progress-bar" aria-hidden="true"><span id="script-progress-fill"></span></div>
+        <p class="script-progress-sub" id="script-progress-detail" style="margin-top:10px;"></p>
+      </section>
+    `;
+    document.body.appendChild(overlay);
+    _progressNode = overlay;
+
+    const start = Date.now();
+    const timer = setInterval(() => {
+      if (!_progressNode || !document.body.contains(_progressNode)) {
+        clearInterval(timer);
+        return;
+      }
+      const seconds = Math.max(1, Math.floor((Date.now() - start) / 1000));
+      const sub = _progressNode.querySelector("#script-progress-sub");
+      if (sub && sub.dataset.baseText) {
+        sub.textContent = `${sub.dataset.baseText}\n已等待 ${seconds}s`;
+      }
+    }, 500);
+
+    const sub = overlay.querySelector("#script-progress-sub");
+    if (sub) sub.dataset.baseText = String(message || "");
+
+    const fill = overlay.querySelector("#script-progress-fill");
+    const detail = overlay.querySelector("#script-progress-detail");
+    return {
+      setPercent(pct) {
+        const v = Math.max(0, Math.min(100, Number(pct || 0)));
+        if (fill) fill.style.width = `${v}%`;
+      },
+      setDetail(text) {
+        if (detail) detail.textContent = String(text || "");
+      },
+    };
+  }
+
+  function closeProgress() {
+    if (!_progressNode) return;
+    if (_progressNode.parentNode) _progressNode.parentNode.removeChild(_progressNode);
+    _progressNode = null;
   }
 
   async function submitReview() {

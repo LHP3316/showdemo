@@ -97,7 +97,8 @@
 
     scenes = remoteScenes.length ? remoteScenes.map(normalizeScene) : buildFallbackScenes();
     renderSceneList();
-    const initial = scenes.find((s) => s.scene_index === 3) || scenes[0];
+    // 默认选中第一个分镜（符合操作习惯）
+    const initial = scenes[0];
     if (initial) selectScene(initial.id, { scrollIntoView: false });
   }
 
@@ -112,7 +113,8 @@
       emotion: String(scene.emotion || ""),
       prompt: String(scene.prompt || ""),
       status: String(scene.status || "待开始"),
-      image_url: scene.image_url ? String(scene.image_url) : "assets/image/preview.png",
+      // 真实数据：无内容就不显示预览（不强行塞占位图）
+      image_url: scene.image_url ? String(scene.image_url) : "",
       video_url: scene.video_url ? String(scene.video_url) : "",
     };
   }
@@ -202,8 +204,17 @@
     setValue("#scene-camera-angle", pickCameraAddon(scene.camera_angle));
     activateShotChip(pickCameraChip(scene.camera_angle));
 
+    // 中间预览：没有内容则隐藏（避免显示空/脏画面）
+    const previewWrap = document.querySelector(".sb-preview");
     const img = document.querySelector("#sb-preview-image");
-    if (img) img.src = scene.image_url || "assets/image/preview.png";
+    const hasImage = !!(scene.image_url && String(scene.image_url).trim());
+    const hasVideo = !!(scene.video_url && String(scene.video_url).trim());
+    const shouldShow = hasImage || hasVideo;
+    if (previewWrap) previewWrap.toggleAttribute("hidden", !shouldShow);
+    if (img) {
+      if (hasImage) img.src = scene.image_url;
+      else img.removeAttribute("src");
+    }
   }
 
   function stepScene(delta) {

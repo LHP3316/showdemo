@@ -18,6 +18,7 @@
       <div class="script-localbar__right" aria-label="快捷操作">
         <button class="script-btn script-btn--ghost" type="button" data-action="import">上传剧本文件</button>
         <button class="script-btn script-btn--ghost" type="button" data-action="save">保存草稿</button>
+        <button class="script-btn script-btn--purple" type="button" data-action="decompose">AI分镜</button>
         <button class="script-btn script-btn--gold" type="button" data-action="submit">提交审核</button>
       </div>
     </section>
@@ -61,7 +62,6 @@
           <div class="script-field">
             <div class="script-field-head">
               <label for="script-editor" class="script-label">剧本内容</label>
-              <button class="script-btn script-btn--purple script-btn--small" type="button" data-action="decompose">AI辅助创作</button>
             </div>
             <textarea id="script-editor" class="script-input script-input--editor" rows="18" placeholder="在这里编辑项目剧本..."></textarea>
             <input id="script-file-input" type="file" accept=".txt,.md,.markdown" hidden>
@@ -71,40 +71,12 @@
         <footer class="script-bottom-actions" aria-label="底部操作">
           <button class="script-btn script-btn--ghost script-btn--bottom" type="button" data-action="import">上传剧本文件</button>
           <button class="script-btn script-btn--ghost script-btn--bottom" type="button" data-action="save">保存草稿</button>
+          <button class="script-btn script-btn--purple script-btn--bottom" type="button" data-action="decompose">AI分镜</button>
           <button class="script-btn script-btn--gold script-btn--bottom" type="button" data-action="submit">提交审核</button>
         </footer>
 
         <p id="script-status" class="script-status" role="status" aria-live="polite">Ready</p>
       </section>
-
-      <aside class="script-side" aria-label="辅助信息">
-        <article class="script-card script-card--assistant" aria-labelledby="assistant-title">
-          <h2 id="assistant-title" class="script-card-title">AI写作助手</h2>
-          <p class="script-card-text">建议在第一幕加入环境音描述，增强画面代入感</p>
-          <p class="script-card-text">检测到主角台词过少，建议增加2-3句独白</p>
-        </article>
-
-        <article class="script-card" aria-labelledby="version-title">
-          <h2 id="version-title" class="script-card-title">版本历史</h2>
-          <ul id="script-scenes-list" class="script-version-list">
-            <li class="script-version-item is-active">
-              <span class="script-version-dot"></span>
-              <span class="script-version-main">当前版本 v0.3</span>
-              <span class="script-version-time">刚刚</span>
-            </li>
-            <li class="script-version-item">
-              <span class="script-version-dot"></span>
-              <span class="script-version-main">v0.2 初稿</span>
-              <span class="script-version-time">2小时前</span>
-            </li>
-            <li class="script-version-item">
-              <span class="script-version-dot"></span>
-              <span class="script-version-main">v0.1 框架版</span>
-              <span class="script-version-time">昨天</span>
-            </li>
-          </ul>
-        </article>
-      </aside>
     </section>
   </main>
 

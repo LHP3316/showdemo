@@ -138,7 +138,7 @@ body.script-screen #static-global-footer {
 
 .script-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 336px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   padding: 28px 36px 28px;
 }
@@ -267,6 +267,58 @@ body.script-screen #static-global-footer {
 
 .script-status.error {
   color: #fda4af;
+}
+
+.script-progress-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.script-progress-panel {
+  width: min(520px, 96vw);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: rgba(18, 18, 26, 0.98);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+  padding: 16px;
+}
+
+.script-progress-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.script-progress-sub {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.script-progress-bar {
+  margin-top: 12px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.script-progress-bar > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-2));
+  transition: width 300ms ease;
 }
 
 .script-side {

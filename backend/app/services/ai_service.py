@@ -115,6 +115,9 @@ class AIService:
         value = (base_url or "").strip().rstrip("/")
         if value.endswith("/chat/completions"):
             return value
+        # DeepSeek 官方域名默认走 /chat/completions
+        if "api.deepseek.com" in value:
+            return f"{value}/chat/completions"
         if value.endswith("/v1"):
             return f"{value}/chat/completions"
         return f"{value}/v1/chat/completions"

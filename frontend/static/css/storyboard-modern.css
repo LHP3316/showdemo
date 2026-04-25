@@ -20,6 +20,32 @@
   box-sizing: border-box;
 }
 
+/* 统一暗色滚动条（避免白色粗滚动条影响观感） */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255, 215, 0, 0.28) rgba(255, 255, 255, 0.06);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.28);
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.06);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.42);
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -138,6 +164,7 @@ body.storyboard-screen #static-global-footer {
   min-height: 700px;
   display: grid;
   grid-template-columns: 294px minmax(0, 1fr) 360px;
+  align-items: stretch;
 }
 
 .sb-sidebar {
@@ -145,6 +172,8 @@ body.storyboard-screen #static-global-footer {
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0; /* 允许内部滚动而不是撑出一屏 */
 }
 
 .sb-editor {
@@ -152,6 +181,8 @@ body.storyboard-screen #static-global-footer {
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 .sb-panel-head {
@@ -210,6 +241,7 @@ body.storyboard-screen #static-global-footer {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding-bottom: 8px;
 }
 
 .sb-item {
@@ -280,11 +312,15 @@ body.storyboard-screen #static-global-footer {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--line);
+  height: 100%;
+  min-height: 0; /* 防止预览区把整体顶出视口 */
 }
 
 .sb-preview {
   flex: 1;
   padding: 20px 20px 12px;
+  min-height: 0;
+  display: flex;
 }
 
 .sb-preview-image {
@@ -294,6 +330,7 @@ body.storyboard-screen #static-global-footer {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #0f172a;
+  max-height: 100%;
 }
 
 .sb-timeline {
@@ -302,6 +339,7 @@ body.storyboard-screen #static-global-footer {
   align-items: center;
   gap: 10px;
   padding: 0 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .sb-timeline__tag {
@@ -325,6 +363,7 @@ body.storyboard-screen #static-global-footer {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 56vw;
 }
 
 .sb-timeline__spacer {
@@ -401,11 +440,21 @@ body.storyboard-screen #static-global-footer {
   padding: 12px;
   line-height: 1.6;
   resize: vertical;
+  overflow: auto;
 }
 
 .sb-textarea--prompt {
   min-height: 90px;
   border-color: rgba(255, 215, 0, 0.2);
+}
+
+/* 右侧编辑区输入：聚焦更明显、滚动条不刺眼 */
+.sb-textarea:focus,
+.sb-select:focus,
+.sb-select:focus-visible {
+  outline: none;
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.14);
 }
 
 .sb-select {
