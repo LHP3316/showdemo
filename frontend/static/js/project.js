@@ -66,6 +66,7 @@
       patchProjectHeader(project);
       patchProgress(project, { scenes, tasks, assets });
       patchAssets(assets);
+      patchFlowSteps(project, { scenes, tasks, assets, reviews });
       patchTimeline(project, { scenes, tasks, reviews });
       patchBlockers(project, { scenes, tasks, reviews });
       patchAssignAction(project);
@@ -186,7 +187,12 @@
 
     const scriptState = hasScript ? "done" : "active";
     const storyboardState = !hasScript ? "pending" : (hasScenes ? "done" : "pending");
-    const renderState = !hasScenes ? "pending" : (allProduced ? "done" : (producedCount > 0 || taskTotal > 0 ? "active" : "pending"));
+    const renderForcedDone = project.status === "review" || project.status === "approved" || project.status === "exported";
+    const renderState = !hasScenes
+      ? "pending"
+      : (renderForcedDone
+        ? "done"
+        : (allProduced ? "done" : (producedCount > 0 || taskTotal > 0 ? "active" : "pending")));
     const reviewState = project.status === "review" ? "active" : (latestReview ? "done" : "pending");
     const exportState = project.status === "approved" ? "active" : (project.status === "exported" ? "done" : "pending");
 
@@ -212,7 +218,7 @@
               ? `资产生成中 ${producedCount}/${scenes.length}`
               : (taskTotal ? `任务 ${taskDone}/${taskTotal} 已完成` : "暂无生成任务：进入分镜工位后可触发文生图/图生视频")))
           : "暂无生成任务：进入分镜工位后可触发文生图/图生视频",
-        tag: allProduced ? "已完成" : (hasScenes && (producedCount > 0 || taskTotal > 0) ? "进行中" : "待开始"),
+        tag: renderForcedDone ? "已完成" : (allProduced ? "已完成" : (hasScenes && (producedCount > 0 || taskTotal > 0) ? "进行中" : "待开始")),
         state: renderState,
       },
       {
@@ -246,6 +252,50 @@
         </li>`
       )
       .join("");
+  }
+
+  function patchFlowSteps(project, ctx) {
+    const scenes = (ctx && Array.isArray(ctx.scenes)) ? ctx.scenes : [];
+    const assets = (ctx && ctx.assets && typeof ctx.assets === "object") ? ctx.assets : {};
+    const hasScenes = scenes.length > 0;
+    const producedCount = scenes.filter((s) => {
+      const image = String((s && s.image_url) || "").trim();
+      const video = String((s && s.video_url) || "").trim();
+      return !!(image || video);
+    }).length;
+    const allProduced = hasScenes && producedCount >= scenes.length;
+    const status = String((project && project.status) || "").trim();
+
+    // 计算当前处于哪一步（1-5）
+    // 1 剧本创作 -> 2 分镜设计 -> 3 生成队列 -> 4 审核确认 -> 5 导出交付
+    let activeStep = 1;
+    if (status === "review") activeStep = 4;
+    else if (status === "approved") activeStep = 5;
+    else if (status === "exported") activeStep = 5;
+    else if (status === "processing") activeStep = 2;
+    else if (status === "draft") activeStep = 1;
+
+    // 生成队列：有产出时可视为进入第3步（但若已到 review/approved 则由上面覆盖）
+    if (activeStep <= 3) {
+      const hasAnyAsset = Math.max(Number(assets.images_count || 0), Number(assets.videos_count || 0), producedCount) > 0;
+      if (hasAnyAsset) activeStep = 3;
+      if (allProduced) activeStep = 3;
+    }
+
+    const steps = Array.from(document.querySelectorAll(".flow-list .flow-step"));
+    if (!steps.length) return;
+    steps.forEach((node, idx) => {
+      const stepNo = idx + 1;
+      node.classList.remove("is-done", "is-active");
+      if (stepNo < activeStep) node.classList.add("is-done");
+      else if (stepNo === activeStep) node.classList.add("is-active");
+    });
+
+    // 导出交付已完成时（exported）把第5步标 done
+    if (status === "exported" && steps[4]) {
+      steps[4].classList.remove("is-active");
+      steps[4].classList.add("is-done");
+    }
   }
 
   function patchBlockers(project, ctx) {

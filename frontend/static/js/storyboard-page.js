@@ -120,6 +120,20 @@
 
     scenes = remoteScenes.length ? remoteScenes.map(normalizeScene) : buildFallbackScenes();
     renderSceneList();
+    // 从其它页面跳转过来时，优先定位到指定分镜 + 指定 tab
+    const targetSceneId = localStorage.getItem("storyboard_target_scene_id");
+    const targetTab = localStorage.getItem("storyboard_target_tab");
+    if (targetTab) {
+      switchMediaTab(targetTab === "video" ? "video" : "image");
+      localStorage.removeItem("storyboard_target_tab");
+    }
+    if (targetSceneId) {
+      const hit = scenes.find((s) => String(s.id) === String(targetSceneId));
+      if (hit) selectScene(hit.id, { scrollIntoView: true });
+      else if (scenes[0]) selectScene(scenes[0].id, { scrollIntoView: false });
+      localStorage.removeItem("storyboard_target_scene_id");
+      return;
+    }
     // 默认选中第一个分镜（符合操作习惯）
     const initial = scenes[0];
     if (initial) selectScene(initial.id, { scrollIntoView: false });

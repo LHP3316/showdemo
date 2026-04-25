@@ -310,19 +310,19 @@
     document.querySelectorAll(".js-rq-regen-img").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = getSceneId(btn);
-        if (id) queueGenerateImage(id);
+        if (id) routeToStoryboard(id, "image");
       });
     });
     document.querySelectorAll(".js-rq-img2v").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = getSceneId(btn);
-        if (id) queueGenerateVideo(id);
+        if (id) routeToStoryboard(id, "video");
       });
     });
     document.querySelectorAll(".js-rq-gen-now").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = getSceneId(btn);
-        if (id) queueGenerateImage(id);
+        if (id) routeToStoryboard(id, "image");
       });
     });
     document.querySelectorAll(".js-rq-preview").forEach((btn) => {
@@ -330,7 +330,8 @@
         const id = getSceneId(btn);
         const scene = scenes.find((s) => String(s.id) === String(id));
         if (scene && scene.video_url) {
-          window.open(scene.video_url, "_blank", "noopener,noreferrer");
+          const url = resolveMediaUrl(scene.video_url);
+          window.open(url, "_blank", "noopener,noreferrer");
         } else {
           setStatus("暂无可预览的视频地址", true);
         }
@@ -339,18 +340,14 @@
     document.querySelectorAll(".js-rq-regen-all").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = getSceneId(btn);
-        if (id) queueGenerateVideo(id);
+        if (id) routeToStoryboard(id, "video");
       });
     });
     document.querySelectorAll(".js-rq-cancel").forEach((btn) => {
       btn.addEventListener("click", () => {
         const card = btn.closest(".rq-card");
-        const taskId = card && card.getAttribute("data-task-id");
-        if (!taskId) {
-          setStatus("未找到任务", true);
-          return;
-        }
-        cancelTask(taskId);
+        const id = card && card.getAttribute("data-scene-id");
+        if (id) routeToStoryboard(id, "image");
       });
     });
   }
@@ -360,36 +357,15 @@
     return card ? card.getAttribute("data-scene-id") : null;
   }
 
-  async function queueGenerateImage(sceneId) {
-    if (!sceneId) return;
+  function routeToStoryboard(sceneId, tab) {
+    const sid = String(sceneId || "").trim();
+    if (!sid) return;
     try {
-      await api.post(`/api/scenes/${sceneId}/generate-image`);
-      setStatus("文生图任务已提交");
-      await loadData();
-    } catch (e) {
-      setStatus(e.message || "文生图失败", true);
-    }
-  }
-
-  async function queueGenerateVideo(sceneId) {
-    if (!sceneId) return;
-    try {
-      await api.post(`/api/scenes/${sceneId}/generate-video`);
-      setStatus("图生视频任务已提交");
-      await loadData();
-    } catch (e) {
-      setStatus(e.message || "图生视频失败", true);
-    }
-  }
-
-  async function cancelTask(taskId) {
-    try {
-      await api.delete(`/api/tasks/${taskId}`);
-      setStatus("已取消任务");
-      await loadData();
-    } catch (e) {
-      setStatus(e.message || "无法取消：任务可能正在执行中", true);
-    }
+      localStorage.setItem("storyboard_target_scene_id", sid);
+      localStorage.setItem("storyboard_target_tab", tab === "video" ? "video" : "image");
+    } catch {}
+    const base = `storyboard.html?id=${encodeURIComponent(String(projectId || ""))}`;
+    window.location.href = base;
   }
 
   function setText(selector, text) {
