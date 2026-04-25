@@ -1,5 +1,10 @@
 /**
  * Review center page
+ *
+ * 注意：review.html 已改版为「分镜审核会话」静态结构（2026）。
+ * 接回动态数据前请对照 DOM：#review-page-title、#review-page-subtitle、
+ * #review-comment-text、#btn-submit-review、#btn-review-pass、#btn-review-reject；
+ * 历史列表不再使用 #review-history-body 表格，请改为请求后渲染 .rsa-history-list。
  */
 (function () {
   let projectId = null;
