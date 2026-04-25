@@ -30,7 +30,7 @@ async def create_task(
     - **task_type**: 任务类型（text2img 或 img2video）
     """
     # 验证分镜是否存在
-    scene = db.query(Scene).filter(Scene.id == task_data.scene_id).first()
+    scene = db.query(Scene).filter(Scene.id == task_data.scene_id, Scene.is_deleted == 0).first()
     if not scene:
         raise HTTPException(status_code=404, detail="分镜不存在")
     

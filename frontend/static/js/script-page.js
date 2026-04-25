@@ -4,6 +4,7 @@
 (function () {
   let projectId = null;
   let currentUser = null;
+  let currentProject = null;
   let importSubmitting = false;
   let decomposeSubmitting = false;
   let _progressNode = null;
@@ -25,8 +26,8 @@
       }
     }
     bindActions();
-    applyRoleUI();
     await loadData();
+    applyRoleUI();
   });
 
   function bindActions() {
@@ -79,6 +80,7 @@
     try {
       const res = await api.get(`/projects/${projectId}`);
       const p = (res && res.data) || {};
+      currentProject = p;
       const episode = p.current_episode || 1;
       const title = p.title || "未命名项目";
 
@@ -113,6 +115,7 @@
 
       renderScenes(p.scenes || []);
       setStatus("Loaded");
+      applyRoleUI();
     } catch (e) {
       setStatus(e.message || "Load failed", true);
     }
@@ -173,6 +176,12 @@
   async function decomposeScript() {
     if (!projectId) return;
     if (decomposeSubmitting) return;
+    if (isScriptStageLocked()) {
+      const msg = "项目已进入制作阶段，已禁用二次 AI 分镜。";
+      setStatus(msg, true);
+      if (window.CommonApp && typeof CommonApp.showInfo === "function") CommonApp.showInfo(msg, "提示");
+      return;
+    }
     try {
       decomposeSubmitting = true;
       // 先自动保存草稿（不弹“已保存”，避免打断流程）
@@ -268,15 +277,9 @@
   async function submitReview() {
     if (!projectId) return;
     try {
-      if (!(currentUser && currentUser.role === "staff")) {
-        const msg = "提交审核需要由工作人员执行（请先分配工作人员，并用工作人员账号提交）。";
-        setStatus(msg, true);
-        if (window.CommonApp && typeof CommonApp.showInfo === "function") CommonApp.showInfo(msg, "提示");
-        return;
-      }
-      await api.post(`/projects/${projectId}/submit-review`);
-      setStatus("Submitted for review");
-      await loadData();
+      const msg = "剧本工位不提供提交审核，请在分镜工位提交审核。";
+      setStatus(msg, true);
+      if (window.CommonApp && typeof CommonApp.showInfo === "function") CommonApp.showInfo(msg, "提示");
     } catch (e) {
       const msg = e.message || "Submit failed";
       setStatus(msg, true);
@@ -286,7 +289,9 @@
 
   function applyRoleUI() {
     const role = currentUser && currentUser.role ? currentUser.role : "";
-    const canEditScript = role === "director" || role === "writer";
+    const locked = isScriptStageLocked();
+    const canEditScript = (role === "director" || role === "writer") && !locked;
+    const canDecompose = (role === "director" || role === "writer" || role === "staff");
     const isStaff = role === "staff";
 
     // 编辑权限（导演/编剧可编辑；工作人员只读）
@@ -296,17 +301,42 @@
       node.toggleAttribute("readonly", !canEditScript);
       node.toggleAttribute("disabled", !canEditScript);
     });
-    document.querySelectorAll("[data-action='save'],[data-action='decompose'],[data-action='import']").forEach((btn) => {
+    document.querySelectorAll("[data-action='save'],[data-action='import']").forEach((btn) => {
       btn.toggleAttribute("hidden", !canEditScript);
       btn.disabled = !canEditScript;
       if (!canEditScript) btn.setAttribute("title", "仅导演/编剧可编辑剧本");
     });
-
-    document.querySelectorAll("[data-action='submit']").forEach((btn) => {
-      btn.toggleAttribute("hidden", !isStaff);
-      btn.disabled = !isStaff;
-      if (!isStaff) btn.setAttribute("title", "仅工作人员可提交审核");
+    document.querySelectorAll("[data-action='decompose']").forEach((btn) => {
+      // 工作人员也允许执行 AI 分镜；若已有图片/视频资产，则禁止二次拆解
+      btn.toggleAttribute("hidden", !canDecompose);
+      // 锁定态保持可点击，用于弹框提示；仅无权限时禁用
+      btn.disabled = !canDecompose;
+      if (locked) btn.setAttribute("title", "当前项目已有图片/视频资产，禁止二次 AI 分镜");
+      else if (!canDecompose) btn.setAttribute("title", "当前角色无权执行 AI 分镜");
+      else btn.removeAttribute("title");
     });
+
+    // 剧本工位不承担提审动作：统一隐藏“提交审核”，避免误操作
+    document.querySelectorAll("[data-action='submit']").forEach((btn) => {
+      btn.toggleAttribute("hidden", true);
+      btn.disabled = true;
+      btn.setAttribute("title", "请在分镜工位提交审核");
+    });
+
+    if (locked && role === "director") {
+      setStatus("当前项目已产出图片/视频资产，剧本工位已切换为只读模式。", true);
+    }
+  }
+
+  function isScriptStageLocked() {
+    const p = currentProject || {};
+    const scenes = Array.isArray(p.scenes) ? p.scenes : [];
+    const hasProducedAssets = scenes.some((s) => {
+      const image = String((s && s.image_url) || "").trim();
+      const video = String((s && s.video_url) || "").trim();
+      return !!(image || video);
+    });
+    return hasProducedAssets;
   }
 
   async function importScriptFile() {

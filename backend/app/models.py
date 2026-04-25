@@ -102,6 +102,8 @@ class Scene(Base):
         default="pending",
         comment='分镜状态：pending=待编辑, editing=编辑中, image_ready=图片已生成, video_ready=视频已生成, accepted=审核通过'
     )
+    is_deleted = Column(SmallInteger, default=0, comment='软删除标记：0=正常,1=已删除')
+    deleted_at = Column(TIMESTAMP, nullable=True, comment='软删除时间')
     created_at = Column(TIMESTAMP, server_default=func.now(), comment='分镜创建时间')
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), comment='最后更新时间（自动更新）')
 

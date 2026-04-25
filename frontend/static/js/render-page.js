@@ -2,6 +2,8 @@
  * AI 生成队列页（render.html）
  */
 (function () {
+  const BACKEND_MEDIA_BASE = "http://localhost:8000";
+  const EMPTY_POSTER = "/static/tu.png";
   let projectId = null;
   let scenes = [];
   let tasks = [];
@@ -189,16 +191,33 @@
       })
       .join("");
 
+    bindMediaFallbacks();
     bindCardActions();
+  }
+
+  function bindMediaFallbacks() {
+    document.querySelectorAll(".rq-card__media img").forEach((img) => {
+      if (img.dataset.fallbackBound === "1") return;
+      img.dataset.fallbackBound = "1";
+      img.addEventListener("error", function () {
+        const cur = String(img.getAttribute("src") || "").trim();
+        if (cur.endsWith("/static/tu.png") || cur.endsWith("tu.png")) {
+          img.style.display = "none";
+          return;
+        }
+        img.src = "tu.png";
+      });
+    });
   }
 
   function cardImageDone(s, name, desc) {
     const safeDesc = escapeHtml(desc);
+    const poster = resolveMediaUrl(s.image_url) || EMPTY_POSTER;
     return `
     <article class="rq-card rq-card--imdone" data-scene-id="${s.id}">
       <div class="rq-card__media">
         <div class="rq-card__media--tint">
-          <img src="${escapeAttr(s.image_url)}" alt="${escapeAttr(name)}" crossorigin="anonymous" />
+          <img src="${escapeAttr(poster)}" alt="${escapeAttr(name)}" crossorigin="anonymous" />
         </div>
         <div class="rq-badge-rt">已完成</div>
       </div>
@@ -218,13 +237,12 @@
 
   function cardGenerating(s, name, desc, task) {
     const safeDesc = escapeHtml(desc);
+    const poster = pickPosterUrlForScene(s);
     return `
     <article class="rq-card rq-card--gen" data-scene-id="${s.id}" data-task-id="${task ? task.id : ""}">
       <div class="rq-card__media">
-        <div class="rq-gen-placeholder">
-          <div class="rq-spin" aria-hidden="true"></div>
-          <span>AI生成中…</span>
-        </div>
+        <img src="${escapeAttr(poster)}" alt="${escapeAttr(name)}" crossorigin="anonymous" />
+        <div class="rq-badge-lt">AI生成中…</div>
       </div>
       <div class="rq-card__body">
         <div class="rq-row-top">
@@ -241,9 +259,11 @@
 
   function cardPending(s, name, desc) {
     const safeDesc = escapeHtml(desc);
+    const poster = pickPosterUrlForScene(s);
     return `
     <article class="rq-card rq-card--pend" data-scene-id="${s.id}">
       <div class="rq-card__media">
+        <img src="${escapeAttr(poster)}" alt="${escapeAttr(name)}" crossorigin="anonymous" />
         <div class="rq-pend-placeholder">
           <div class="rq-pend-icon" aria-hidden="true"></div>
           <span>等待生成</span>
@@ -264,7 +284,7 @@
   }
 
   function cardVideoDone(s, name, desc) {
-    const poster = s.image_url || s.video_url;
+    const poster = pickVideoPosterUrl(s);
     const safeDesc = escapeHtml(desc);
     return `
     <article class="rq-card rq-card--vdone" data-scene-id="${s.id}">
@@ -387,6 +407,36 @@
 
   function pad2(n) {
     return String(Number(n) || 0).padStart(2, "0");
+  }
+
+  function normalizeImageList(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map((v) => String(v || "").trim()).filter(Boolean);
+  }
+
+  function resolveMediaUrl(url) {
+    const text = String(url || "").trim();
+    if (!text) return "";
+    if (text.startsWith("/uploads/")) return `${BACKEND_MEDIA_BASE}${text}`;
+    return text;
+  }
+
+  function pickVideoPosterUrl(scene) {
+    const main = resolveMediaUrl(scene && scene.image_url);
+    if (main) return main;
+    const list = normalizeImageList(scene && scene.image_urls);
+    if (list.length) {
+      const first = resolveMediaUrl(list[0]);
+      if (first) return first;
+    }
+    return EMPTY_POSTER;
+  }
+
+  function pickPosterUrlForScene(scene) {
+    const main = resolveMediaUrl(scene && scene.image_url);
+    if (main) return main;
+    if (scene && scene.video_url) return pickVideoPosterUrl(scene);
+    return EMPTY_POSTER;
   }
 
   function escapeHtml(text) {

@@ -16,7 +16,7 @@
   });
 
   function bindActions() {
-    bindClick("#btn-go-script", () => goToWorkbench("script"));
+    bindClick("#btn-go-script", goToScriptWorkbench);
     bindClick("#btn-go-storyboard", () => goToWorkbench("storyboard"));
     bindClick("#btn-go-render", () => goToWorkbench("render"));
     bindClick("#btn-go-review", () => goToWorkbench("review"));
@@ -64,7 +64,7 @@
       const tasks = tasksAll.filter((t) => t && sceneIdSet.has(t.scene_id));
 
       patchProjectHeader(project);
-      patchProgress(project, tasks);
+      patchProgress(project, { scenes, tasks, assets });
       patchAssets(assets);
       patchTimeline(project, { scenes, tasks, reviews });
       patchBlockers(project, { scenes, tasks, reviews });
@@ -95,6 +95,20 @@
     window.location.href = id ? `${base}?id=${id}` : base;
   }
 
+  function hasProducedAssets(project) {
+    const scenes = Array.isArray(project && project.scenes) ? project.scenes : [];
+    return scenes.some((s) => {
+      const image = String((s && s.image_url) || "").trim();
+      const video = String((s && s.video_url) || "").trim();
+      return !!(image || video);
+    });
+  }
+
+  function goToScriptWorkbench() {
+    // 允许导演进入剧本工位；具体是否可编辑由剧本页按资产状态控制只读
+    goToWorkbench("script");
+  }
+
   function patchProjectHeader(project) {
     const title = project.title || "未命名项目";
     const meta = `${project.genre || "未知风格"} · ${project.episode_count || 0} 集`;
@@ -113,11 +127,27 @@
     }
   }
 
-  function patchProgress(project, tasks) {
-    const sceneCount = Number(project.scene_count || 0);
-    const done = tasks.filter((t) => t.status === "success").length;
-    const total = Math.max(sceneCount, done, 1);
-    const percent = Math.min(100, Math.floor((done / total) * 100));
+  function patchProgress(project, ctx) {
+    const scenes = (ctx && Array.isArray(ctx.scenes)) ? ctx.scenes : [];
+    const tasks = (ctx && Array.isArray(ctx.tasks)) ? ctx.tasks : [];
+    const assets = (ctx && ctx.assets && typeof ctx.assets === "object") ? ctx.assets : {};
+    const sceneCount = Number(project.scene_count || assets.total_scenes || scenes.length || 0);
+
+    // 优先按分镜资产进度计算（有图或有视频即计入已制作），避免任务队列缺失时进度一直为 0%
+    const sceneAssetDone = scenes.filter((s) => {
+      const image = String((s && s.image_url) || "").trim();
+      const video = String((s && s.video_url) || "").trim();
+      return !!(image || video);
+    }).length;
+
+    const assetDone = Math.max(
+      sceneAssetDone,
+      Number(assets.images_count || 0),
+      Number(assets.videos_count || 0),
+      tasks.filter((t) => t.status === "success").length
+    );
+    const total = Math.max(sceneCount, 1);
+    const percent = Math.min(100, Math.floor((assetDone / total) * 100));
 
     setText("#project-progress-percent", `${percent}%`);
     setText(
@@ -147,10 +177,16 @@
     const taskDone = tasks.filter((t) => t.status === "success").length;
     const taskTotal = tasks.length;
     const latestReview = reviews && reviews[0] ? reviews[0] : null;
+    const producedCount = scenes.filter((s) => {
+      const image = String((s && s.image_url) || "").trim();
+      const video = String((s && s.video_url) || "").trim();
+      return !!(image || video);
+    }).length;
+    const allProduced = hasScenes && producedCount >= scenes.length;
 
     const scriptState = hasScript ? "done" : "active";
-    const storyboardState = !hasScript ? "pending" : (hasScenes ? "active" : "pending");
-    const renderState = !hasScenes ? "pending" : (taskTotal ? "active" : "pending");
+    const storyboardState = !hasScript ? "pending" : (hasScenes ? "done" : "pending");
+    const renderState = !hasScenes ? "pending" : (allProduced ? "done" : (producedCount > 0 || taskTotal > 0 ? "active" : "pending"));
     const reviewState = project.status === "review" ? "active" : (latestReview ? "done" : "pending");
     const exportState = project.status === "approved" ? "active" : (project.status === "exported" ? "done" : "pending");
 
@@ -163,22 +199,28 @@
       },
       {
         title: "AI分镜 / 分镜设计",
-        desc: hasScenes ? `已生成分镜 ${scenes.length} 条 · ${formatDate(project.updated_at)}` : (hasScript ? "尚未生成分镜：请在剧本工位点击 AI分镜" : "等待剧本录入后可生成分镜"),
-        tag: hasScenes ? "进行中" : "待开始",
+        desc: hasScenes ? `已生成分镜 ${scenes.length} 条 · ${formatDate(project.updated_at)}` : (hasScript ? "尚未生成分镜：可直接进入分镜工位创建与编辑分镜" : "等待剧本录入后可创建分镜"),
+        tag: hasScenes ? "已完成" : "待开始",
         state: storyboardState,
       },
       {
         title: "生成队列",
-        desc: taskTotal ? `任务 ${taskDone}/${taskTotal} 已完成` : "暂无生成任务：进入分镜工位后可触发文生图/图生视频",
-        tag: taskTotal ? "进行中" : "待开始",
+        desc: hasScenes
+          ? (allProduced
+            ? `资产已完成 ${producedCount}/${scenes.length}`
+            : (producedCount > 0
+              ? `资产生成中 ${producedCount}/${scenes.length}`
+              : (taskTotal ? `任务 ${taskDone}/${taskTotal} 已完成` : "暂无生成任务：进入分镜工位后可触发文生图/图生视频")))
+          : "暂无生成任务：进入分镜工位后可触发文生图/图生视频",
+        tag: allProduced ? "已完成" : (hasScenes && (producedCount > 0 || taskTotal > 0) ? "进行中" : "待开始"),
         state: renderState,
       },
       {
         title: "审核确认",
         desc: project.status === "review"
           ? "项目已提交审核，等待导演确认"
-          : (latestReview ? `最近一次审核：${latestReview.status} · ${formatDate(latestReview.created_at)}` : "未提交审核"),
-        tag: project.status === "review" ? "待审核" : (latestReview ? "已完成" : "待开始"),
+          : (latestReview ? `最近一次审核：${latestReview.status} · ${formatDate(latestReview.created_at)}` : "暂未提交审核"),
+        tag: project.status === "review" ? "待审核" : (latestReview ? "已完成" : "暂未提交"),
         state: reviewState,
       },
       {
@@ -221,7 +263,9 @@
 
     if (!hasScript) issues.push("未录入剧本：请进入剧本工位上传/粘贴剧本并保存。");
     if (isDirector && !project.assigned_to) issues.push("未分配工作人员：请先分配执行人员。");
-    if (hasScript && !hasScenes) issues.push("未生成分镜：请在剧本工位点击 AI分镜 生成分镜列表。");
+    if (hasScript && !hasScenes) {
+      issues.push(isDirector ? "未生成分镜：请先分配工作人员，由工作人员进入分镜工位创建分镜列表。" : "未生成分镜：请进入分镜工位创建分镜列表。");
+    }
     if (project.status === "rejected") {
       const latest = reviews && reviews[0] ? reviews[0] : null;
       const comment = latest && latest.comment ? String(latest.comment) : "";
@@ -256,12 +300,21 @@
     const hasScenes = scenes.length > 0;
     const isDirector = !!(currentUser && currentUser.role === "director");
     const isStaff = !!(currentUser && currentUser.role === "staff");
+    const scriptLockedForDirector = isDirector && hasProducedAssets(project);
 
-    // 导演：可分配、可进剧本、可看审核（审核页），但“提交审核”应由工作人员
-    // 工作人员：可进剧本（只读）、可进分镜/生成队列，提交审核走剧本工位按钮（已在剧本工位限制）
-    setBtnState("#btn-go-script", { disabled: false });
-    setBtnState("#btn-go-storyboard", { disabled: !hasScenes, title: hasScenes ? "" : "请先在剧本工位执行 AI分镜 生成分镜" });
-    setBtnState("#btn-go-render", { disabled: !hasScenes, title: hasScenes ? "" : "请先生成分镜后再进入生成队列" });
+    // 导演：主要负责剧本/分配/审核/导出，不进入分镜与生成队列执行工位
+    // 工作人员：进入分镜与生成队列执行制作
+    setBtnState("#btn-go-script", { disabled: false, title: "" });
+    setBtnState("#btn-go-storyboard", {
+      hidden: isDirector,
+      disabled: !hasScript,
+      title: hasScript ? "" : "请先录入剧本后再进入分镜工位",
+    });
+    setBtnState("#btn-go-render", {
+      hidden: false,
+      disabled: !hasScenes,
+      title: hasScenes ? "" : "请先生成分镜后再进入生成队列",
+    });
 
     // 审核中心：导演可见；工作人员仅查看状态（不开放进入审核中心）
     const canEnterReview = isDirector;
@@ -283,10 +336,14 @@
     if (subtitle) {
       if (isDirector && !project.assigned_to) {
         subtitle.textContent = "当前未分配工作人员：请先分配执行人员，再推进分镜与生成。";
+      } else if (scriptLockedForDirector) {
+        subtitle.textContent = "项目已进入制作阶段：导演可跟进审核与导出，不再进入剧本工位。";
       } else if (!hasScript) {
         subtitle.textContent = "当前未录入剧本：请进入剧本工位上传/粘贴剧本并保存。";
       } else if (hasScript && !hasScenes) {
-        subtitle.textContent = "已录入剧本：请进入剧本工位点击 AI分镜 生成分镜。";
+        subtitle.textContent = isDirector
+          ? "已录入剧本：请分配工作人员进入分镜工位创建分镜。"
+          : "已录入剧本：可直接进入分镜工位创建分镜。";
       } else if (isStaff) {
         subtitle.textContent = "你可以进入分镜工位完善分镜，并在生成队列生成资产。";
       }

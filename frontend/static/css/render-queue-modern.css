@@ -283,6 +283,8 @@ body.render-screen #static-global-footer {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(8, 12, 22, 0.35), rgba(8, 12, 22, 0.55));
   color: #9ca3af;
   font-size: 13px;
   font-weight: 500;

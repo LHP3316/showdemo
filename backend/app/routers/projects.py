@@ -6,6 +6,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -126,7 +127,7 @@ async def list_projects(
     items = []
     for project in projects:
         # 统计分镜数量
-        scene_count = db.query(Scene).filter(Scene.project_id == project.id).count()
+        scene_count = db.query(Scene).filter(Scene.project_id == project.id, Scene.is_deleted == 0).count()
         creator = project.creator
         assignee = project.assignee
         
@@ -210,7 +211,7 @@ async def get_project(
         raise HTTPException(status_code=403, detail="无权限访问此项目")
     
     # 查询分镜
-    scenes = db.query(Scene).filter(Scene.project_id == project_id).order_by(Scene.episode_number, Scene.scene_index).all()
+    scenes = db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0).order_by(Scene.episode_number, Scene.scene_index).all()
     
     # 构建响应
     creator = project.creator
@@ -315,18 +316,26 @@ async def decompose_project(
     """
     使用AI自动拆解剧本为分镜
     
-    - 仅导演可执行
+    - 导演与已分配的工作人员可执行
     - 会删除现有分镜并重新生成
     """
-    if current_user.role != "director":
-        raise HTTPException(status_code=403, detail="仅导演可拆解剧本")
-    
     project = _get_project_or_404(project_id, db)
+    if current_user.role == "director":
+        pass
+    elif current_user.role == "staff":
+        if project.assigned_to != current_user.id:
+            raise HTTPException(status_code=403, detail="仅项目已分配的工作人员可拆解剧本")
+    else:
+        raise HTTPException(status_code=403, detail="当前角色无权拆解剧本")
+
     if not project.script:
         raise HTTPException(status_code=400, detail="项目尚未填写剧本")
     
-    # 删除现有分镜
-    db.query(Scene).filter(Scene.project_id == project_id).delete()
+    # 软删除现有分镜（保留历史资产/追溯信息）
+    db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0).update(
+        {"is_deleted": 1, "deleted_at": func.now()},
+        synchronize_session=False,
+    )
     
     # AI拆解
     scene_data_list = await ai_service.decompose_script(project.script)

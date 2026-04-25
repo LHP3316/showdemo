@@ -6,6 +6,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -24,7 +25,7 @@ def _is_text_to_video_model(model_name: str | None) -> bool:
 
 def _get_scene_or_404(scene_id: int, db: Session) -> Scene:
     """获取分镜或返回404"""
-    scene = db.query(Scene).filter(Scene.id == scene_id).first()
+    scene = db.query(Scene).filter(Scene.id == scene_id, Scene.is_deleted == 0).first()
     if not scene:
         raise HTTPException(status_code=404, detail="分镜不存在")
     return scene
@@ -38,7 +39,7 @@ async def list_scenes(
     current_user: User = Depends(get_current_user)
 ):
     """获取项目的分镜列表"""
-    query = db.query(Scene).filter(Scene.project_id == project_id)
+    query = db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0)
     
     if episode:
         query = query.filter(Scene.episode_number == episode)
@@ -189,7 +190,8 @@ async def delete_scene(
 ):
     """删除分镜"""
     scene = _get_scene_or_404(scene_id, db)
-    db.delete(scene)
+    scene.is_deleted = 1
+    scene.deleted_at = func.now()
     db.commit()
     
     return None
@@ -306,6 +308,7 @@ async def batch_generate_images(
     """批量生成项目所有分镜的图片"""
     scenes = db.query(Scene).filter(
         Scene.project_id == project_id,
+        Scene.is_deleted == 0,
         Scene.image_url.is_(None)
     ).all()
     
@@ -345,6 +348,7 @@ async def batch_generate_videos(
     """批量生成项目所有分镜的视频（无图时自动文生视频）"""
     scenes = db.query(Scene).filter(
         Scene.project_id == project_id,
+        Scene.is_deleted == 0,
         Scene.video_url.is_(None)
     ).all()
     

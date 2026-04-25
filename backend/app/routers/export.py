@@ -34,7 +34,7 @@ async def get_project_assets(
         raise HTTPException(status_code=404, detail="项目不存在")
     
     # 查询分镜
-    query = db.query(Scene).filter(Scene.project_id == project_id)
+    query = db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0)
     if episode:
         query = query.filter(Scene.episode_number == episode)
     
@@ -96,7 +96,7 @@ async def package_export(
         raise HTTPException(status_code=404, detail="项目不存在")
     
     # 查询分镜
-    query = db.query(Scene).filter(Scene.project_id == project_id)
+    query = db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0)
     if episode:
         query = query.filter(Scene.episode_number == episode)
     
