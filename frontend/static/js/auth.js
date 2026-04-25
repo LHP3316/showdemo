@@ -53,7 +53,7 @@
     const username = usernameInput.value.trim();
     const password = passwordInput.value.trim();
     if (!username || !password) {
-      showError("Please enter username and password");
+      showError("请输入账号与密码");
       return;
     }
 
@@ -66,7 +66,7 @@
       localStorage.setItem("user", JSON.stringify(data.user));
       window.location.href = "workspace.html";
     } catch (err) {
-      showError(err.message || "Login failed");
+      showError(err.message || "登录失败");
     } finally {
       setLoading(false);
     }

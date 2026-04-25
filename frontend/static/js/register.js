@@ -1,8 +1,9 @@
 /**
- * 工作人员注册（角色固定为 staff，由隐藏字段提交）
+ * 注册页（导演/工作人员）
  */
 (function () {
   const form = document.getElementById("registerForm");
+  const roleInput = document.getElementById("reg-role");
   const usernameInput = document.getElementById("reg-username");
   const displayNameInput = document.getElementById("reg-display-name");
   const passwordInput = document.getElementById("reg-password");
@@ -11,7 +12,7 @@
   const registerBtn = document.getElementById("registerBtn");
   const defaultBtnText = (registerBtn && registerBtn.textContent ? registerBtn.textContent.trim() : "") || "完成注册";
 
-  if (!form || !usernameInput || !displayNameInput || !passwordInput || !password2Input || !registerBtn) {
+  if (!form || !roleInput || !usernameInput || !displayNameInput || !passwordInput || !password2Input || !registerBtn) {
     return;
   }
 
@@ -24,8 +25,9 @@
     const displayName = displayNameInput.value.trim();
     const password = passwordInput.value;
     const password2 = password2Input.value;
+    const role = String(roleInput.value || "").trim();
 
-    if (!username || !displayName || !password || !password2) {
+    if (!role || !username || !displayName || !password || !password2) {
       showError("请填写账号、用户名与密码");
       return;
     }
@@ -46,7 +48,7 @@
         username,
         password,
         display_name: displayName,
-        role: "staff",
+        role,
       });
       window.location.href = "login.html?registered=1";
     } catch (err) {

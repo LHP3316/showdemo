@@ -58,6 +58,8 @@ body {
   padding: 20px 16px;
   position: relative;
   overflow: hidden;
+  /* 让原生表单控件（尤其 select 下拉）走暗色，避免白底/高亮条刺目 */
+  color-scheme: dark;
   font-family: "Noto Sans SC-Black", "Microsoft YaHei", sans-serif;
   font-weight: 400;
   background:
@@ -160,6 +162,37 @@ body {
 .login-page .static-login-input:focus {
   border-color: rgba(255, 215, 0, 0.6);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15);
+}
+
+/* 注册页「角色」等下拉：与暗色卡一致，选项可读 */
+.login-page select.static-login-input {
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  accent-color: #ffd700;
+  background-color: rgba(255, 255, 255, 0.06);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d1d5db' d='M1.2 3.2h9.6L6 8.6 1.2 3.2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 44px;
+}
+
+.login-page select.static-login-input:hover {
+  border-color: rgba(255, 215, 0, 0.22);
+}
+
+.login-page select.static-login-input option,
+.login-page select.static-login-input optgroup {
+  background-color: #12121a;
+  color: #e5e7eb;
+}
+
+.login-page select.static-login-input option:hover,
+.login-page select.static-login-input option:focus,
+.login-page select.static-login-input option:active {
+  background-color: rgba(255, 215, 0, 0.18);
+  color: #fff;
 }
 
 .login-page .static-login-error {

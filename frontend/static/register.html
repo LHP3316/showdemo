@@ -11,14 +11,16 @@
     <section class="login-card" aria-labelledby="registerTitle">
       <header class="login-header">
         <div class="login-logo" aria-hidden="true">AI</div>
-        <h1 id="registerTitle" class="login-title">工作人员注册</h1>
-        <p class="login-subtitle">与登录页相同样式 · 新账号将用于平台协作</p>
+        <h1 id="registerTitle" class="login-title">创建账号</h1>
+        <p class="login-subtitle">新账号将用于平台协作（导演/工作人员）</p>
       </header>
 
       <form id="registerForm" class="static-login-form" autocomplete="on">
-        <input type="hidden" name="role" value="staff" id="field-role">
-
-        <p class="login-role-hint" aria-live="polite">身份：<strong>工作人员</strong>（<code>staff</code>，固定不可选）</p>
+        <label class="login-label" for="reg-role">角色</label>
+        <select id="reg-role" name="role" class="static-login-input" required>
+          <option value="director">导演</option>
+          <option value="staff" selected>工作人员</option>
+        </select>
 
         <label class="login-label" for="reg-username">账号</label>
         <input id="reg-username" name="username" class="static-login-input" type="text" autocomplete="username" minlength="3" maxlength="50" required placeholder="仅用于登录，全平台唯一（3–50 位）">

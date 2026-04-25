@@ -8,30 +8,32 @@
   <link rel="stylesheet" href="css/render-queue-modern.css">
 </head>
 <body class="render-screen">
-  <!-- 列表为静态演示；接数据时再加 js/render-page.js。顶栏由 common.js 注入，需已登录且能访问后端 /auth/me -->
+  <!-- AI生成队列：由 js/render-page.js 接入后端数据 -->
   <main class="rq-page" aria-label="AI生成队列">
     <header class="rq-header">
       <div class="rq-header__left">
         <h1 class="rq-header__title">AI生成队列</h1>
-        <p class="rq-header__sub">寻龙少年 · 热血奇遇记 · 第6集 · 共24个场景</p>
+        <p class="rq-header__sub" id="render-page-subtitle">加载中…</p>
       </div>
       <div class="rq-header__pills" aria-label="整集进度">
         <div class="rq-pill rq-pill--done">
           <span class="rq-pill__dot" aria-hidden="true"></span>
-          <span>已完成 <strong>8</strong></span>
+          <span>已完成 <strong id="rq-stat-done">0</strong></span>
         </div>
         <div class="rq-pill rq-pill--gen">
           <span class="rq-pill__dot" aria-hidden="true"></span>
-          <span>生成中 <strong>3</strong></span>
+          <span>生成中 <strong id="rq-stat-gen">0</strong></span>
         </div>
         <div class="rq-pill rq-pill--wait">
           <span class="rq-pill__dot" aria-hidden="true"></span>
-          <span>待生成 <strong>13</strong></span>
+          <span>待生成 <strong id="rq-stat-wait">0</strong></span>
         </div>
       </div>
     </header>
 
-    <section class="rq-grid" aria-label="分镜场景卡片（静态演示）">
+    <p id="render-status" class="rq-status" hidden aria-live="polite"></p>
+
+    <section class="rq-grid" id="render-card-grid" aria-label="分镜场景卡片">
       <!-- Card 1：图已完成 -->
       <article class="rq-card rq-card--imdone">
         <div class="rq-card__media rq-media--demo-statue">
@@ -113,5 +115,6 @@
 
   <script src="js/api.js"></script>
   <script src="js/common.js"></script>
+  <script src="js/render-page.js"></script>
 </body>
 </html>

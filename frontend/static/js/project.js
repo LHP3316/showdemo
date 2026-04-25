@@ -2,10 +2,14 @@
  * Project detail page (semantic layout)
  */
 (function () {
+  let currentUser = null;
+  let cachedProject = null;
+
   document.addEventListener("DOMContentLoaded", async function () {
     if (!window.CommonApp || !window.api) return;
     const ok = await CommonApp.ensureSession(true);
     if (!ok) return;
+    currentUser = safeJson(localStorage.getItem("user"));
 
     bindActions();
     await loadProjectInfo();
@@ -18,6 +22,7 @@
     bindClick("#btn-go-review", () => goToWorkbench("review"));
     bindClick("#btn-go-export", () => goToWorkbench("export"));
     bindClick("#btn-view-blockers", () => goToWorkbench("review"));
+    bindClick("#btn-assign-staff", assignStaffForProject);
   }
 
   function bindClick(selector, handler) {
@@ -49,12 +54,14 @@
       const project = projectRes && projectRes.data ? projectRes.data : {};
       const tasks = tasksRes && tasksRes.data && tasksRes.data.items ? tasksRes.data.items : [];
       const assets = assetsRes && assetsRes.data ? assetsRes.data : {};
+      cachedProject = project;
 
       patchProjectHeader(project);
       patchProgress(project, tasks);
       patchAssets(assets);
       patchTimeline(project);
       patchBlockers(project);
+      patchAssignAction(project);
     } catch (err) {
       console.error("Failed to load project detail:", err);
       // keep semantic page defaults when backend is unavailable
@@ -87,6 +94,11 @@
     setText("#project-title", title);
     setText("#project-meta", meta);
     setText("#project-subtitle", project.description || "电影工业级创作协作平台");
+    if (project.assigned_to) {
+      setText("#project-assign-status", `当前已分配工作人员 ID：${project.assigned_to}`);
+    } else {
+      setText("#project-assign-status", "当前未分配工作人员");
+    }
   }
 
   function patchProgress(project, tasks) {
@@ -177,6 +189,46 @@
     if (action) action.style.visibility = "visible";
   }
 
+  function patchAssignAction(project) {
+    const btn = document.querySelector("#btn-assign-staff");
+    if (!btn) return;
+    const isDirector = !!(currentUser && currentUser.role === "director");
+    btn.toggleAttribute("hidden", !isDirector);
+    if (isDirector) {
+      btn.textContent = project && project.assigned_to ? "重新分配工作人员" : "分配给工作人员";
+    }
+  }
+
+  async function assignStaffForProject() {
+    const projectId = getProjectId();
+    if (!projectId) return;
+    if (!(currentUser && currentUser.role === "director")) return;
+
+    try {
+      const users = await api.get("/auth/users");
+      const staffUsers = (Array.isArray(users) ? users : []).filter((u) => u && u.role === "staff");
+      if (!staffUsers.length) {
+        setText("#project-assign-status", "暂无可分配的工作人员");
+        return;
+      }
+      const options = staffUsers.map((u) => `${u.id}:${u.display_name || u.username}`).join(" | ");
+      const raw = window.prompt(`请输入分配目标 staff ID。\n可选：${options}`);
+      if (!raw) return;
+      const assignedTo = Number(raw.trim());
+      if (!Number.isInteger(assignedTo) || assignedTo <= 0) {
+        setText("#project-assign-status", "请输入有效的 staff ID");
+        return;
+      }
+
+      await api.put(`/projects/${projectId}/assign?assigned_to=${assignedTo}`, {});
+      setText("#project-assign-status", `分配成功：工作人员 ID ${assignedTo}`);
+      if (cachedProject) cachedProject.assigned_to = assignedTo;
+      patchAssignAction(cachedProject || {});
+    } catch (err) {
+      setText("#project-assign-status", err && err.message ? err.message : "分配失败");
+    }
+  }
+
   function setText(selector, text) {
     const node = document.querySelector(selector);
     if (node) node.textContent = text;
@@ -208,5 +260,14 @@
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
+  }
+
+  function safeJson(raw) {
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
   }
 })();

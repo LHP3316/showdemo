@@ -184,8 +184,30 @@
       if (topAvatar) topAvatar.textContent = String(name).trim().charAt(0) || "U";
       const topUser = document.querySelector("#2_49");
       if (topUser) topUser.textContent = name;
+
+      applyRoleToNav(user);
     } catch {
       // no-op
+    }
+  }
+
+  function applyRoleToNav(user) {
+    const role = (user && user.role) ? String(user.role) : "";
+    const isDirector = role === "director";
+
+    const navReview = document.querySelector("#nav-review");
+    if (navReview) {
+      navReview.toggleAttribute("hidden", !isDirector);
+    }
+
+    const navProject = document.querySelector("#nav-project");
+    if (navProject) {
+      navProject.textContent = isDirector ? "项目监控" : "我的作品";
+    }
+
+    // 基础权限守卫：工作人员不允许进入审核中心页
+    if (!isDirector && pageName === "review.html") {
+      routeTo("workspace");
     }
   }
 

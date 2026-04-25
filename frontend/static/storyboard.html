@@ -92,12 +92,17 @@
 
         <section class="sb-form" aria-label="编辑表单">
           <div class="sb-field">
-            <label class="sb-label">镜头类型</label>
-            <div class="sb-chips" role="group" aria-label="镜头类型">
+            <label class="sb-label">镜头语言</label>
+            <div class="sb-chips" role="group" aria-label="镜头语言">
               <button class="sb-chip is-active" type="button" data-shot="中景">中景</button>
               <button class="sb-chip" type="button" data-shot="特写">特写</button>
               <button class="sb-chip" type="button" data-shot="全景">全景</button>
             </div>
+          </div>
+
+          <div class="sb-field">
+            <label class="sb-label" for="scene-characters">角色（逗号分隔）</label>
+            <input id="scene-characters" class="sb-select" type="text" placeholder="例如：主角,反派,配角">
           </div>
 
           <div class="sb-field">
@@ -106,18 +111,29 @@
           </div>
 
           <div class="sb-field">
+            <label class="sb-label" for="scene-dialogue">台词</label>
+            <textarea id="scene-dialogue" class="sb-textarea" placeholder="请输入台词（可选）"></textarea>
+          </div>
+
+          <div class="sb-field">
+            <label class="sb-label" for="scene-emotion">情绪</label>
+            <input id="scene-emotion" class="sb-select" type="text" placeholder="例如：紧张 / 温馨 / 悬疑">
+          </div>
+
+          <div class="sb-field">
             <label class="sb-label" for="scene-prompt">AI提示词</label>
             <textarea id="scene-prompt" class="sb-textarea sb-textarea--prompt" placeholder="请输入AI提示词"></textarea>
           </div>
 
           <div class="sb-field">
-            <label class="sb-label" for="scene-camera">运镜方式</label>
-            <select id="scene-camera" class="sb-select" aria-label="运镜方式">
-              <option value="Follow Dolly">跟随推进 (Follow Dolly)</option>
-              <option value="Static">固定机位 (Static)</option>
-              <option value="Pan">平移摇镜 (Pan)</option>
-              <option value="Tilt">俯仰摇镜 (Tilt)</option>
-              <option value="Handheld">手持抖动 (Handheld)</option>
+            <label class="sb-label" for="scene-camera-angle">镜头补充</label>
+            <select id="scene-camera-angle" class="sb-select" aria-label="镜头补充">
+              <option value="">（可选）</option>
+              <option value="远景">远景</option>
+              <option value="近景">近景</option>
+              <option value="俯拍">俯拍</option>
+              <option value="仰拍">仰拍</option>
+              <option value="跟拍">跟拍</option>
             </select>
           </div>
 

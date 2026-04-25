@@ -25,18 +25,27 @@
     bindClick("#sb-next", function () { stepScene(1); });
     bindClick("#btn-batch-image", batchGenerateImages);
     bindClick("#btn-save-draft", syncActiveEdits);
-    bindClick("#btn-submit-review", syncActiveEdits);
+    bindClick("#btn-submit-review", submitProjectForReview);
     bindClick("#btn-gen-image", function () { generateImage(activeSceneId); });
     bindClick("#btn-gen-video", function () { generateVideo(activeSceneId); });
+
+    const characters = document.querySelector("#scene-characters");
+    if (characters) characters.addEventListener("blur", syncActiveEdits);
 
     const desc = document.querySelector("#scene-description");
     if (desc) desc.addEventListener("blur", syncActiveEdits);
 
+    const dialogue = document.querySelector("#scene-dialogue");
+    if (dialogue) dialogue.addEventListener("blur", syncActiveEdits);
+
+    const emotion = document.querySelector("#scene-emotion");
+    if (emotion) emotion.addEventListener("blur", syncActiveEdits);
+
     const prompt = document.querySelector("#scene-prompt");
     if (prompt) prompt.addEventListener("blur", syncActiveEdits);
 
-    const camera = document.querySelector("#scene-camera");
-    if (camera) camera.addEventListener("change", syncActiveEdits);
+    const cameraAngle = document.querySelector("#scene-camera-angle");
+    if (cameraAngle) cameraAngle.addEventListener("change", syncActiveEdits);
 
     document.querySelectorAll(".sb-chip").forEach(function (chip) {
       chip.addEventListener("click", function () {
@@ -96,12 +105,15 @@
     return {
       id: String(scene.id),
       scene_index: Number(scene.scene_index || 0),
+      characters: String(scene.characters || ""),
       scene_description: String(scene.scene_description || ""),
+      dialogue: String(scene.dialogue || ""),
+      camera_angle: String(scene.camera_angle || ""),
+      emotion: String(scene.emotion || ""),
       prompt: String(scene.prompt || ""),
-      shot_type: String(scene.shot_type || "中景"),
-      camera_move: String(scene.camera_move || "Follow Dolly"),
       status: String(scene.status || "待开始"),
       image_url: scene.image_url ? String(scene.image_url) : "assets/image/preview.png",
+      video_url: scene.video_url ? String(scene.video_url) : "",
     };
   }
 
@@ -119,12 +131,15 @@
       out.push({
         id: `demo-${i}`,
         scene_index: i,
+        characters: "主角",
         scene_description: t.desc,
+        dialogue: "",
+        camera_angle: i % 3 === 0 ? "中景" : i % 2 === 0 ? "特写" : "全景",
+        emotion: "自然",
         prompt: "medium shot, Chinese ancient warrior walking toward mysterious stone stele, tall ancient trees, golden light through leaves, cinematic atmosphere, 8k quality",
-        shot_type: i % 3 === 0 ? "中景" : i % 2 === 0 ? "特写" : "全景",
-        camera_move: "Follow Dolly",
         status: i <= 2 ? "已完成" : i === 3 ? "进行中" : "待开始",
         image_url: "assets/image/preview.png",
+        video_url: "",
       });
     }
     return out;
@@ -179,10 +194,13 @@
     setText("#sb-editor-title", `Scene ${pad2(scene.scene_index)} · 第6集`);
     setText("#sb-active-tag", `Scene ${pad2(scene.scene_index)} / 第6集`);
     setText("#sb-active-desc", scene.scene_description);
+    setValue("#scene-characters", scene.characters);
     setValue("#scene-description", scene.scene_description);
+    setValue("#scene-dialogue", scene.dialogue);
+    setValue("#scene-emotion", scene.emotion);
     setValue("#scene-prompt", scene.prompt);
-    setValue("#scene-camera", scene.camera_move);
-    activateShotChip(scene.shot_type);
+    setValue("#scene-camera-angle", pickCameraAddon(scene.camera_angle));
+    activateShotChip(pickCameraChip(scene.camera_angle));
 
     const img = document.querySelector("#sb-preview-image");
     if (img) img.src = scene.image_url || "assets/image/preview.png";
@@ -196,14 +214,18 @@
     selectScene(scenes[next].id);
   }
 
-  function syncActiveEdits() {
+  async function syncActiveEdits() {
     if (!activeSceneId) return;
     const scene = scenes.find((s) => String(s.id) === String(activeSceneId));
     if (!scene) return;
+    scene.characters = valueOf("#scene-characters");
     scene.scene_description = valueOf("#scene-description");
+    scene.dialogue = valueOf("#scene-dialogue");
+    scene.emotion = valueOf("#scene-emotion");
     scene.prompt = valueOf("#scene-prompt");
-    scene.camera_move = valueOf("#scene-camera") || "Follow Dolly";
-    scene.shot_type = activeShotType();
+    scene.camera_angle = mergeCameraAngle(activeShotType(), valueOf("#scene-camera-angle"));
+
+    await persistScene(scene);
     renderSceneList();
     selectScene(scene.id, { scrollIntoView: false });
   }
@@ -217,6 +239,63 @@
   function activeShotType() {
     const active = document.querySelector(".sb-chip.is-active");
     return active ? String(active.getAttribute("data-shot")) : "中景";
+  }
+
+  function mergeCameraAngle(base, addon) {
+    const a = String(addon || "").trim();
+    const b = String(base || "").trim();
+    if (!a) return b;
+    if (!b) return a;
+    if (a === b) return b;
+    return `${b},${a}`;
+  }
+
+  function pickCameraChip(cameraAngle) {
+    const text = String(cameraAngle || "");
+    if (text.includes("特写")) return "特写";
+    if (text.includes("全景")) return "全景";
+    if (text.includes("中景")) return "中景";
+    return "中景";
+  }
+
+  function pickCameraAddon(cameraAngle) {
+    const text = String(cameraAngle || "");
+    const options = ["远景", "近景", "俯拍", "仰拍", "跟拍"];
+    for (const o of options) {
+      if (text.includes(o)) return o;
+    }
+    return "";
+  }
+
+  async function persistScene(scene) {
+    if (!scene || !projectId) return;
+    if (!/^\d+$/.test(String(projectId))) return;
+    if (!/^\d+$/.test(String(scene.id))) return; // demo 场景不落库
+    try {
+      await api.put(`/api/scenes/${scene.id}`, {
+        characters: scene.characters,
+        scene_description: scene.scene_description,
+        dialogue: scene.dialogue,
+        camera_angle: scene.camera_angle,
+        emotion: scene.emotion,
+        prompt: scene.prompt,
+      });
+      setText("#storyboard-status", "已保存");
+    } catch (e) {
+      setText("#storyboard-status", (e && e.message) ? e.message : "保存失败");
+    }
+  }
+
+  async function submitProjectForReview() {
+    if (!projectId) return;
+    await syncActiveEdits();
+    try {
+      await api.post(`/projects/${projectId}/submit-review`);
+      setText("#storyboard-status", "已提交审核");
+      if (window.CommonApp) window.CommonApp.routeTo("project");
+    } catch (e) {
+      setText("#storyboard-status", (e && e.message) ? e.message : "提交失败");
+    }
   }
 
   async function batchGenerateImages() {

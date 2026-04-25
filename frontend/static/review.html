@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/review-session-modern.css">
 </head>
 <body class="review-session-screen">
-  <!-- 静态演示：接接口时恢复 js/review-page.js，并为其预留 id -->
+  <!-- 审核会话页：由 js/review-page.js 接入后端数据 -->
   <main class="rsa-page" id="review-session-main">
     <header class="rsa-page-header" aria-label="会话信息与操作">
       <div class="rsa-page-header__intro">
@@ -78,6 +78,7 @@
 
       <aside class="rsa-audit" aria-labelledby="rsa-audit-heading">
         <h2 class="rsa-audit__title" id="rsa-audit-heading">审核记录</h2>
+        <p id="review-status" class="rsa-page-lede" style="margin: 10px 0 0; opacity: .85;" aria-live="polite"></p>
 
         <form class="rsa-form" id="review-comment-form" aria-label="添加审核意见">
           <fieldset class="rsa-fieldset">
@@ -138,10 +139,6 @@
 
   <script src="js/api.js"></script>
   <script src="js/common.js"></script>
-  <script>
-    document.getElementById("review-comment-form")?.addEventListener("submit", function (e) {
-      e.preventDefault();
-    });
-  </script>
+  <script src="js/review-page.js"></script>
 </body>
 </html>

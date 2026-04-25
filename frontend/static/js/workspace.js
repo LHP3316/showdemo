@@ -2,87 +2,34 @@
  * Workspace page (Pixso layout + live data)
  */
 (function () {
-  const SNAPSHOT_MODE = true;
-  const SNAPSHOT_DATA = {
-    userName: "张导演",
-    joinedDays: 128,
-    stats: {
-      total: 12,
-      pendingTasks: 5,
-      review: 3,
-      done: 8,
-    },
-    tasks: [
-      {
-        title: "寻龙少年·第一集",
-        desc: "剧本创作工位 · 剧情第1-3幕初稿待完善，导演已反馈修改意见",
-        deadline: "2024-03-15",
-        statusText: "进行中",
-        statusClass: "is-doing",
-        route: "script",
-      },
-      {
-        title: "星际逃亡·第三集",
-        desc: "分镜设计工位 · 第15-22场分镜图需要重新绘制并配置提示词",
-        deadline: "2024-03-18",
-        statusText: "待处理",
-        statusClass: "is-pending",
-        route: "storyboard",
-      },
-    ],
-    projects: [
-      {
-        id: "demo-1",
-        title: "寻龙少年·热血奇遇记",
-        subtitle: "古风热血 · 12集 · 分镜阶段",
-        statusText: "制作中",
-        statusClass: "is-warn",
-      },
-      {
-        id: "demo-2",
-        title: "星际逃亡·迷途天际",
-        subtitle: "科幻悬疑 · 8集 · 生成队列",
-        statusText: "生成中",
-        statusClass: "is-primary",
-      },
-      {
-        id: "demo-3",
-        title: "都市情缘·她的选择",
-        subtitle: "都市爱情 · 6集 · 审核阶段",
-        statusText: "待审核",
-        statusClass: "is-success",
-      },
-    ],
-  };
+  const SNAPSHOT_MODE = false;
+  let currentUser = null;
+  let staffUsers = [];
 
   document.addEventListener("DOMContentLoaded", async function () {
     document.body.classList.add("workspace-screen");
     bindActions();
-    setText(".brand-name", "AI短剧创作台");
-    setText("#btn-new-project", "新建项目");
 
     if (SNAPSHOT_MODE) {
-      renderSnapshot();
+      renderSnapshotFallback();
       return;
     }
 
     if (!window.CommonApp || !window.api) return;
     const ok = await CommonApp.ensureSession(true);
     if (!ok) return;
+    currentUser = safeJson(localStorage.getItem("user"));
+    applyRoleLayout();
     await loadDashboard();
   });
 
   function bindActions() {
     bindClick("#btn-refresh", function () {
-      if (SNAPSHOT_MODE) {
-        renderSnapshot();
-        return;
-      }
       loadDashboard();
     });
     bindClick("#btn-new-project", createProjectAndOpen);
     bindClick("#stat-action-project", () => safeRouteTo("project"));
-    bindClick("#stat-action-task", () => safeRouteTo("script"));
+    bindClick("#stat-action-task", () => safeRouteTo(isDirector() ? "project" : "storyboard"));
     bindClick("#stat-action-review", () => safeRouteTo("review"));
     bindClick("#stat-action-done", () => safeRouteTo("export"));
   }
@@ -96,107 +43,112 @@
 
   async function loadDashboard() {
     try {
-      const [statsRes, tasksRes, pendingRes, projectsRes] = await Promise.all([
+      const requests = [
         api.get("/projects/stats"),
         api.get("/api/tasks/tasks?size=100"),
-        api.get("/api/reviews/pending?size=50"),
         api.get("/projects?size=20"),
-      ]);
+      ];
+      if (isDirector()) {
+        requests.push(api.get("/api/reviews/pending?size=50"));
+        requests.push(api.get("/auth/users"));
+      } else {
+        requests.push(Promise.resolve({ data: { items: [] } }));
+        requests.push(Promise.resolve([]));
+      }
+      const [statsRes, tasksRes, projectsRes, pendingRes, usersRes] = await Promise.all(requests);
 
       const stats = (statsRes && statsRes.data) || {};
       const tasks = (tasksRes && tasksRes.data && tasksRes.data.items) || [];
-      const pending = (pendingRes && pendingRes.data && pendingRes.data.items) || [];
       const projects = (projectsRes && projectsRes.data && projectsRes.data.items) || [];
+      const pending = (pendingRes && pendingRes.data && pendingRes.data.items) || [];
+      const users = Array.isArray(usersRes) ? usersRes : [];
+      staffUsers = users.filter((u) => u && u.role === "staff");
 
-      const activeTasks = tasks.filter((t) => t.status === "pending" || t.status === "processing");
+      const activeTasks = tasks.filter((t) => t.status === "pending" || t.status === "processing" || t.status === "running");
       setText("#stat-total", String(stats.total || 0));
       setText("#stat-pending-tasks", String(activeTasks.length));
-      setText("#stat-review", String(pending.length));
+      setText("#stat-review", String(isDirector() ? pending.length : (stats.review || 0)));
       setText("#stat-done", String(stats.approved || 0));
-      setText("#tasks-count-pill", `${activeTasks.length} 个待处理`);
+      setText("#tasks-count-pill", isDirector() ? `${pending.length} 个待审核` : `${activeTasks.length} 个待处理`);
 
       if (projects[0] && projects[0].id) {
         localStorage.setItem("activeProjectId", String(projects[0].id));
       }
 
       patchWelcome(stats.total || 0);
-      patchTaskList(activeTasks);
-      patchRecentProjects(projects);
+      if (isDirector()) {
+        patchDirectorTaskPanel(projects, pending);
+        patchDirectorProjectList(projects);
+      } else {
+        patchStaffTaskList(activeTasks);
+        patchStaffProjectList(projects);
+      }
     } catch (err) {
       console.error("Failed to load workspace data:", err);
       setText("#workspace-subtitle", "数据加载失败，请点击刷新重试");
     }
   }
 
-  function renderSnapshot() {
-    const stats = SNAPSHOT_DATA.stats;
-    setText("#workspace-welcome", `欢迎回来，${SNAPSHOT_DATA.userName}`);
-    setText("#workspace-subtitle", `今天是您加入平台的第 ${SNAPSHOT_DATA.joinedDays} 天，共参与 ${stats.total} 个项目`);
-    setText("#top-username", SNAPSHOT_DATA.userName);
-    setText("#top-avatar", SNAPSHOT_DATA.userName.charAt(0));
-    setText("#stat-total", String(stats.total));
-    setText("#stat-pending-tasks", String(stats.pendingTasks));
-    setText("#stat-review", String(stats.review));
-    setText("#stat-done", String(stats.done));
-    setText("#tasks-count-pill", `${stats.pendingTasks} 个待处理`);
-    patchTaskListSnapshot(SNAPSHOT_DATA.tasks);
-    patchRecentProjectsSnapshot(SNAPSHOT_DATA.projects);
-  }
-
-  function patchTaskListSnapshot(tasks) {
+  function patchDirectorTaskPanel(projects, pending) {
     const list = document.querySelector("#task-list");
     if (!list) return;
-    list.innerHTML = tasks.map((t) => {
+
+    const unassigned = projects.filter((p) => !p.assigned_to);
+    const queue = []
+      .concat(unassigned.map((p) => ({ type: "assign", project: p })))
+      .concat(pending.map((p) => ({ type: "review", project: p })));
+
+    if (!queue.length) {
+      list.innerHTML = `
+        <li class="item-card">
+          <h3 class="item-title">暂无导演待办</h3>
+          <p class="item-subtitle">项目分配与审核任务将在这里显示。</p>
+        </li>
+      `;
+      return;
+    }
+
+    list.innerHTML = queue.slice(0, 6).map((item) => {
+      if (item.type === "assign") {
+        const p = item.project;
+        return `
+          <li class="item-card item-card-task">
+            <h3 class="item-title">待分配：${escapeHtml(p.title || "未命名项目")}</h3>
+            <p class="item-subtitle">该项目尚未分配工作人员，分配后即可进入执行。</p>
+            <div class="item-foot">
+              <span class="pill">状态：${escapeHtml(mapProjectStatus(p.status))}</span>
+              <button class="link-btn data-assign-project" data-id="${escapeHtml(String(p.id))}" type="button">立即分配</button>
+            </div>
+          </li>
+        `;
+      }
+      const p = item.project;
       return `
         <li class="item-card item-card-task">
-          <h3 class="item-title">${escapeHtml(t.title)}</h3>
-          <p class="item-subtitle">${escapeHtml(t.desc)}</p>
+          <h3 class="item-title">待审核：${escapeHtml(p.title || "未命名项目")}</h3>
+          <p class="item-subtitle">工作人员已提交成果，等待导演审核。</p>
           <div class="item-foot">
-            <span class="pill status-pill ${escapeHtml(t.statusClass)}">${escapeHtml(t.statusText)}</span>
-            <span class="item-meta">截止：${escapeHtml(t.deadline)}</span>
-            <button class="link-btn data-enter-task" data-route="${escapeHtml(t.route)}" type="button">进入工位</button>
+            <span class="pill">状态：待审核</span>
+            <button class="link-btn data-open-review" data-id="${escapeHtml(String(p.id))}" type="button">进入审核</button>
           </div>
         </li>
       `;
     }).join("");
 
-    list.querySelectorAll(".data-enter-task").forEach((el) => {
+    list.querySelectorAll(".data-assign-project").forEach((el) => {
       el.addEventListener("click", function () {
-        const route = el.getAttribute("data-route");
-        if (!route) return;
-        safeRouteTo(route);
+        const projectId = el.getAttribute("data-id");
+        if (!projectId) return;
+        assignProjectFlow(projectId);
       });
     });
-  }
 
-  function patchRecentProjectsSnapshot(projects) {
-    const list = document.querySelector("#recent-project-list");
-    if (!list) return;
-    list.innerHTML = projects.map((p) => {
-      const iconClass = `icon-${getIconSeed(String(p.id || ""))}`;
-      return `
-        <li class="item-card item-card-project data-open-project" data-id="${escapeHtml(String(p.id))}">
-          <span class="project-icon ${iconClass}" aria-hidden="true"></span>
-          <div class="project-main">
-            <h3 class="item-title">${escapeHtml(p.title)}</h3>
-            <p class="item-subtitle">${escapeHtml(p.subtitle)}</p>
-          </div>
-          <div class="item-foot">
-            <span class="pill status-pill ${escapeHtml(p.statusClass)}">${escapeHtml(p.statusText)}</span>
-            <button class="link-btn" type="button">打开项目</button>
-          </div>
-        </li>
-      `;
-    }).join("");
-
-    list.querySelectorAll(".data-open-project").forEach((el) => {
-      el.style.cursor = "pointer";
+    list.querySelectorAll(".data-open-review").forEach((el) => {
       el.addEventListener("click", function () {
         const projectId = el.getAttribute("data-id");
         if (!projectId) return;
         localStorage.setItem("activeProjectId", String(projectId));
-        if (String(projectId).startsWith("demo-")) return;
-        window.location.href = `project.html?id=${projectId}`;
+        window.location.href = `review.html?id=${projectId}`;
       });
     });
   }
@@ -206,12 +158,12 @@
     const name = (user && (user.display_name || user.username)) || "User";
     const first = name.charAt(0).toUpperCase();
     setText("#workspace-welcome", `欢迎回来，${name}`);
-    setText("#workspace-subtitle", `今天共参与 ${totalProjects} 个项目`);
+    setText("#workspace-subtitle", isDirector() ? `当前共有 ${totalProjects} 个项目等待统筹` : `今天共参与 ${totalProjects} 个我的作品`);
     setText("#top-username", name);
     setText("#top-avatar", first);
   }
 
-  function patchTaskList(tasks) {
+  function patchStaffTaskList(tasks) {
     const list = document.querySelector("#task-list");
     if (!list) return;
 
@@ -245,16 +197,66 @@
     });
   }
 
-  function patchRecentProjects(projects) {
+  function patchDirectorProjectList(projects) {
     const list = document.querySelector("#recent-project-list");
     if (!list) return;
-
     if (!projects.length) {
       list.innerHTML = projectEmptyHtml();
       return;
     }
 
-    list.innerHTML = projects.slice(0, 4).map((p) => {
+    list.innerHTML = projects.slice(0, 8).map((p) => {
+      const iconClass = `icon-${getIconSeed(String(p.id || ""))}`;
+      const assignedText = p.assigned_to ? `已分配 #${p.assigned_to}` : "未分配";
+      return `
+        <li class="item-card item-card-project" data-id="${p.id}">
+          <span class="project-icon ${iconClass}" aria-hidden="true"></span>
+          <div class="project-main">
+            <h3 class="item-title">${escapeHtml(p.title || "未命名项目")}</h3>
+            <p class="item-subtitle">${escapeHtml(p.genre || "未分类")} · ${p.episode_count || 0}集 · ${escapeHtml(assignedText)}</p>
+          </div>
+          <div class="item-foot">
+            <span class="pill">${escapeHtml(mapProjectStatus(p.status))}</span>
+            <button class="link-btn data-assign-project" data-id="${p.id}" type="button">分配</button>
+            <button class="link-btn data-open-project" data-id="${p.id}" type="button">打开</button>
+          </div>
+        </li>
+      `;
+    }).join("");
+
+    list.querySelectorAll(".data-open-project").forEach((el) => {
+      el.addEventListener("click", function () {
+        const projectId = el.getAttribute("data-id");
+        if (!projectId) return;
+        localStorage.setItem("activeProjectId", String(projectId));
+        window.location.href = `project.html?id=${projectId}`;
+      });
+    });
+
+    list.querySelectorAll(".data-assign-project").forEach((el) => {
+      el.addEventListener("click", function () {
+        const projectId = el.getAttribute("data-id");
+        if (!projectId) return;
+        assignProjectFlow(projectId);
+      });
+    });
+  }
+
+  function patchStaffProjectList(projects) {
+    const list = document.querySelector("#recent-project-list");
+    if (!list) return;
+
+    if (!projects.length) {
+      list.innerHTML = `
+        <li class="item-card">
+          <h3 class="item-title">暂无分配作品</h3>
+          <p class="item-subtitle">导演分配后，你的作品会出现在这里。</p>
+        </li>
+      `;
+      return;
+    }
+
+    list.innerHTML = projects.slice(0, 8).map((p) => {
       const iconClass = `icon-${getIconSeed(String(p.id || ""))}`;
       return `
         <li class="item-card item-card-project data-open-project" data-id="${p.id}">
@@ -282,8 +284,43 @@
     });
   }
 
+  async function assignProjectFlow(projectId) {
+    if (!isDirector()) return;
+    if (!staffUsers.length) {
+      try {
+        const users = await api.get("/auth/users");
+        staffUsers = (Array.isArray(users) ? users : []).filter((u) => u && u.role === "staff");
+      } catch {
+        // ignore
+      }
+    }
+    if (!staffUsers.length) {
+      setText("#workspace-subtitle", "暂无可分配的工作人员账号");
+      return;
+    }
+    const options = staffUsers.map((u) => `${u.id}:${u.display_name || u.username}`).join(" | ");
+    const raw = window.prompt(`请输入分配目标 staff ID。\n可选：${options}`);
+    if (!raw) return;
+    const assignedTo = Number(raw.trim());
+    if (!Number.isInteger(assignedTo) || assignedTo <= 0) {
+      setText("#workspace-subtitle", "请输入有效的 staff ID");
+      return;
+    }
+    try {
+      await api.put(`/projects/${projectId}/assign?assigned_to=${assignedTo}`, {});
+      setText("#workspace-subtitle", `项目 ${projectId} 分配成功`);
+      await loadDashboard();
+    } catch (err) {
+      setText("#workspace-subtitle", err && err.message ? err.message : "分配失败");
+    }
+  }
+
   async function createProjectAndOpen() {
     if (SNAPSHOT_MODE) return;
+    if (!isDirector()) {
+      setText("#workspace-subtitle", "仅导演可新建项目");
+      return;
+    }
     if (!window.api) return;
     try {
       const now = new Date();
@@ -307,7 +344,7 @@
     return `
       <li class="item-card">
         <h3 class="item-title">暂无任务</h3>
-        <p class="item-subtitle">当前没有待处理任务，新的任务会自动出现在这里。</p>
+        <p class="item-subtitle">当前没有待处理任务。</p>
       </li>
     `;
   }
@@ -386,6 +423,30 @@
     if (window.CommonApp && typeof CommonApp.routeTo === "function") {
       CommonApp.routeTo(route);
     }
+  }
+
+  function isDirector() {
+    return !!(currentUser && currentUser.role === "director");
+  }
+
+  function applyRoleLayout() {
+    setText("#workspace-task-title", isDirector() ? "导演待办" : "我的任务");
+    setText("#workspace-project-title", isDirector() ? "项目监控列表" : "我的作品列表");
+
+    const newBtn = document.querySelector("#btn-new-project");
+    if (newBtn) {
+      newBtn.toggleAttribute("hidden", !isDirector());
+      newBtn.textContent = isDirector() ? "+ 新建项目" : "";
+    }
+
+    setText("#stat-action-project .stat-title", isDirector() ? "全部项目" : "我的作品");
+    setText("#stat-action-task .stat-title", isDirector() ? "待分配/处理" : "待处理任务");
+    setText("#stat-action-review .stat-title", isDirector() ? "待审核" : "审核状态");
+  }
+
+  function renderSnapshotFallback() {
+    setText("#workspace-welcome", "欢迎回来");
+    setText("#workspace-subtitle", "演示模式");
   }
 })();
 
