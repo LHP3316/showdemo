@@ -17,7 +17,7 @@
   };
 
   function isPublicPage() {
-    return pageName === "login.html" || pageName === "index.html";
+    return pageName === "login.html" || pageName === "register.html" || pageName === "index.html";
   }
 
   function getActiveProjectId() {

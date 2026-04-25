@@ -13,8 +13,25 @@
     return;
   }
 
+  showRegisteredNotice();
   checkAuth();
   form.addEventListener("submit", onSubmit);
+
+  function showRegisteredNotice() {
+    const notice = document.getElementById("loginNotice");
+    if (!notice) return;
+    const q = new URLSearchParams(window.location.search).get("registered");
+    if (q === "1") {
+      notice.textContent = "注册成功，请使用新账号登录";
+      notice.classList.add("show");
+      notice.removeAttribute("hidden");
+      try {
+        window.history.replaceState({}, "", "login.html");
+      } catch {
+        // no-op
+      }
+    }
+  }
 
   async function checkAuth() {
     const token = localStorage.getItem("token");
