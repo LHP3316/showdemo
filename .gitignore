@@ -28,6 +28,9 @@ build/
 tmp/
 temp/
 
+# Uploads (generated media)
+uploads/
+
 # Local tool folders
 .agents/
 .codex/

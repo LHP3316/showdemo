@@ -17,6 +17,11 @@ from app.services.geeknow_service import geeknow_service
 router = APIRouter()
 
 
+def _is_text_to_video_model(model_name: str | None) -> bool:
+    name = str(model_name or "").strip().lower()
+    return "t2v" in name
+
+
 def _get_scene_or_404(scene_id: int, db: Session) -> Scene:
     """获取分镜或返回404"""
     scene = db.query(Scene).filter(Scene.id == scene_id).first()
@@ -60,6 +65,7 @@ async def list_scenes(
                 "image_config": scene.image_config,
                 "video_config": scene.video_config,
                 "image_url": scene.image_url,
+                "image_urls": scene.image_urls,
                 "video_url": scene.video_url,
                 "duration": scene.duration,
                 "status": scene.status,
@@ -99,6 +105,7 @@ async def get_scene(
             "image_config": scene.image_config,
             "video_config": scene.video_config,
             "image_url": scene.image_url,
+            "image_urls": scene.image_urls,
             "video_url": scene.video_url,
             "duration": scene.duration,
             "status": scene.status,
@@ -135,6 +142,7 @@ async def create_scene(
         video_prompt=body.video_prompt,
         image_config=body.image_config,
         video_config=body.video_config,
+        image_urls=body.image_urls,
         status="pending",
     )
     db.add(scene)
@@ -208,10 +216,12 @@ async def generate_image(
     
     try:
         # 调用AI服务生成图片
-        image_url = await geeknow_service.text_to_image(prompt, config=scene.image_config or None)
+        image_urls = await geeknow_service.text_to_images(prompt, config=scene.image_config or None)
+        image_url = image_urls[0]
         
         # 更新分镜
         scene.image_url = image_url
+        scene.image_urls = image_urls
         scene.status = "image_ready"
         db.commit()
         db.refresh(scene)
@@ -222,6 +232,7 @@ async def generate_image(
             data={
                 "scene_id": scene.id,
                 "image_url": image_url,
+                "image_urls": image_urls,
                 "status": scene.status
             }
         )
@@ -236,22 +247,35 @@ async def generate_video(
     current_user: User = Depends(get_current_user)
 ):
     """
-    使用AI根据图片生成分镜视频
-    
-    - 需要分镜已有 image_url
+    使用AI生成分镜视频
+    - 有图时走图生视频
+    - 无图时自动走文生视频
     - 生成成功后自动更新 video_url
     """
     scene = _get_scene_or_404(scene_id, db)
-    
-    # 验证图片存在
-    if not scene.image_url:
-        raise HTTPException(status_code=400, detail="请先生成分镜图片")
-    
+
+    # 优先 image_url，兼容历史数据回退到 image_urls[0]
+    source_image = (scene.image_url or "").strip()
+    if not source_image and isinstance(scene.image_urls, list) and scene.image_urls:
+        source_image = str(scene.image_urls[0] or "").strip()
+
     try:
-        # 调用AI服务生成视频
+        # 提示词优先级：video_prompt > prompt > scene_description
         vprompt = scene.video_prompt or scene.prompt
-        video_url = await geeknow_service.image_to_video(scene.image_url, vprompt, config=scene.video_config or None)
-        
+        if not vprompt:
+            vprompt = scene.scene_description or ""
+
+        cfg = scene.video_config or {}
+        requested_model = ""
+        if isinstance(cfg, dict):
+            requested_model = str(cfg.get("model") or "")
+
+        # 模型是 t2v 时强制走文生视频；否则有图走图生
+        if source_image and not _is_text_to_video_model(requested_model):
+            video_url = await geeknow_service.image_to_video(source_image, vprompt, config=scene.video_config or None)
+        else:
+            video_url = await geeknow_service.text_to_video(vprompt, config=scene.video_config or None)
+
         # 更新分镜
         scene.video_url = video_url
         scene.status = "video_ready"
@@ -264,6 +288,8 @@ async def generate_video(
             data={
                 "scene_id": scene.id,
                 "video_url": video_url,
+                "image_url": scene.image_url,
+                "image_urls": scene.image_urls,
                 "status": scene.status
             }
         )
@@ -290,8 +316,9 @@ async def batch_generate_images(
         try:
             prompt = scene.image_prompt or scene.prompt or scene.scene_description
             if prompt:
-                image_url = await geeknow_service.text_to_image(prompt, config=scene.image_config or None)
-                scene.image_url = image_url
+                image_urls = await geeknow_service.text_to_images(prompt, config=scene.image_config or None)
+                scene.image_url = image_urls[0]
+                scene.image_urls = image_urls
                 scene.status = "image_ready"
                 success_count += 1
         except Exception:
@@ -315,10 +342,9 @@ async def batch_generate_videos(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """批量生成项目所有分镜的视频"""
+    """批量生成项目所有分镜的视频（无图时自动文生视频）"""
     scenes = db.query(Scene).filter(
         Scene.project_id == project_id,
-        Scene.image_url.isnot(None),
         Scene.video_url.is_(None)
     ).all()
     
@@ -327,8 +353,18 @@ async def batch_generate_videos(
     
     for scene in scenes:
         try:
-            vprompt = scene.video_prompt or scene.prompt
-            video_url = await geeknow_service.image_to_video(scene.image_url, vprompt, config=scene.video_config or None)
+            source_image = (scene.image_url or "").strip()
+            if not source_image and isinstance(scene.image_urls, list) and scene.image_urls:
+                source_image = str(scene.image_urls[0] or "").strip()
+            vprompt = scene.video_prompt or scene.prompt or scene.scene_description or ""
+            cfg = scene.video_config or {}
+            requested_model = ""
+            if isinstance(cfg, dict):
+                requested_model = str(cfg.get("model") or "")
+            if source_image and not _is_text_to_video_model(requested_model):
+                video_url = await geeknow_service.image_to_video(source_image, vprompt, config=scene.video_config or None)
+            else:
+                video_url = await geeknow_service.text_to_video(vprompt, config=scene.video_config or None)
             scene.video_url = video_url
             scene.status = "video_ready"
             success_count += 1

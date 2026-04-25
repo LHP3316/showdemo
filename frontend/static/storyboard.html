@@ -17,7 +17,6 @@
       </div>
 
       <div class="sb-localbar__right" aria-label="快捷操作">
-        <button id="btn-batch-image" class="sb-btn sb-btn--gold" type="button">AI生成全部分镜</button>
         <button id="btn-save-draft" class="sb-btn sb-btn--ghost" type="button">保存草稿</button>
         <button id="btn-submit-review" class="sb-btn sb-btn--green" type="button">提交审核</button>
       </div>
@@ -75,7 +74,9 @@
         </div>
         <div class="sb-preview">
           <img id="sb-preview-image" class="sb-preview-image" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="分镜预览图">
+          <video id="sb-preview-video" class="sb-preview-video" controls playsinline hidden></video>
         </div>
+        <div id="sb-preview-thumbs" class="sb-preview-thumbs" aria-label="分镜图片缩略图" hidden></div>
 
         <div class="sb-timeline" aria-label="分镜信息">
           <span class="sb-timeline__tag" id="sb-active-tag">Scene 03 / 第6集</span>
@@ -86,6 +87,15 @@
         </div>
 
         <div id="storyboard-status" class="sb-status" aria-live="polite"></div>
+        <div id="sb-progress-wrap" class="sb-progress" hidden aria-live="polite">
+          <div class="sb-progress__meta">
+            <span id="sb-progress-text" class="sb-progress__text">正在处理…</span>
+            <span id="sb-progress-time" class="sb-progress__time">0s</span>
+          </div>
+          <div class="sb-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="sb-progress-fill" class="sb-progress__fill" style="width: 0%;"></div>
+          </div>
+        </div>
       </section>
 
       <aside class="sb-editor" aria-label="场景编辑">
@@ -118,11 +128,46 @@
           <div id="field-image-prompt" class="sb-field">
             <label class="sb-label" for="scene-image-prompt">图片提示词（文生图）</label>
             <textarea id="scene-image-prompt" class="sb-textarea sb-textarea--prompt" placeholder="请输入图片提示词（用于生成图片）"></textarea>
+            <div class="sb-param-grid" aria-label="图片生成参数">
+              <div class="sb-field">
+                <label class="sb-label" for="img-size">尺寸</label>
+                <select id="img-size" class="sb-select">
+                  <option value="1280x720">1280x720</option>
+                  <option value="1024x1024">1024x1024</option>
+                  <option value="1920x1080">1920x1080</option>
+                </select>
+              </div>
+              <div class="sb-field">
+                <label class="sb-label" for="img-count">张数</label>
+                <input id="img-count" class="sb-select" type="number" min="1" max="4" step="1" value="1">
+              </div>
+            </div>
           </div>
 
           <div id="field-video-prompt" class="sb-field" hidden>
             <label class="sb-label" for="scene-video-prompt">视频提示词（图生视频）</label>
             <textarea id="scene-video-prompt" class="sb-textarea sb-textarea--prompt" placeholder="请输入视频提示词（用于生成视频，可与图片不同）"></textarea>
+            <div class="sb-param-grid" aria-label="视频生成参数">
+              <div class="sb-field">
+                <label class="sb-label" for="vid-seconds">时长（秒）</label>
+                <input id="vid-seconds" class="sb-select" type="number" min="4" max="15" step="1" value="5">
+              </div>
+              <div class="sb-field">
+                <label class="sb-label" for="vid-size">分辨率</label>
+                <select id="vid-size" class="sb-select">
+                  <option value="720P">720P（1280x720）</option>
+                  <option value="1080P">1080P（1920x1080）</option>
+                </select>
+              </div>
+              <div class="sb-field">
+                <label class="sb-label" for="vid-aspect">比例</label>
+                <select id="vid-aspect" class="sb-select">
+                  <option value="16:9">16:9</option>
+                  <option value="9:16">9:16</option>
+                  <option value="1:1">1:1</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div class="sb-actions" aria-label="生成操作">
@@ -133,6 +178,9 @@
       </aside>
     </section>
   </main>
+  <div id="sb-toast" class="sb-toast" hidden aria-live="polite">
+    <span id="sb-toast-text" class="sb-toast__text"></span>
+  </div>
 
   <script src="js/api.js"></script>
   <script src="js/common.js"></script>

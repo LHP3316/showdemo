@@ -136,6 +136,7 @@ class SceneBase(BaseModel):
     video_prompt: Optional[str] = Field(None, description="图生视频提示词（video 专用）")
     image_config: Optional[Any] = Field(None, description="文生图参数配置（JSON，可选）")
     video_config: Optional[Any] = Field(None, description="图生视频参数配置（JSON，可选）")
+    image_urls: Optional[List[str]] = Field(None, description="图片URL列表（多图结果）")
 
 class SceneCreate(SceneBase):
     """创建分镜请求"""
@@ -156,6 +157,7 @@ class SceneUpdate(BaseModel):
     image_config: Optional[Any] = Field(None, description="文生图参数配置（JSON，可选）")
     video_config: Optional[Any] = Field(None, description="图生视频参数配置（JSON，可选）")
     image_url: Optional[str] = Field(None, description="图片URL")
+    image_urls: Optional[List[str]] = Field(None, description="图片URL列表（多图结果）")
     video_url: Optional[str] = Field(None, description="视频URL")
     duration: Optional[int] = Field(None, ge=0, description="视频时长（秒）")
     status: Optional[str] = Field(None, description="分镜状态")

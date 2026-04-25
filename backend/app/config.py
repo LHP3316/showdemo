@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     LLM_MODEL: str = ""
     GEEKNOW_API_URL: str = ""
     GEEKNOW_API_KEY: str = ""
-
     # showdemo 拆解服务扩展配置（可选）
     SHOWDEMO_LLM_BASE_URL: str = ""
     SHOWDEMO_LLM_API_KEY: str = ""

@@ -94,6 +94,7 @@ class Scene(Base):
     image_config = Column(JSON, comment='文生图参数配置（JSON，可选）')
     video_config = Column(JSON, comment='图生视频参数配置（JSON，可选）')
     image_url = Column(Text, comment='AI生成的分镜图片URL')
+    image_urls = Column(JSON, comment='AI生成的分镜图片URL列表（JSON数组）')
     video_url = Column(Text, comment='AI生成的分镜视频URL')
     duration = Column(Integer, comment='视频时长（单位：秒）')
     status = Column(

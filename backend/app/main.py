@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from app.bootstrap import ensure_default_admin
 from app.routers.auth import router as auth_router
@@ -31,6 +33,11 @@ app.include_router(reviews_router, prefix="/api/reviews", tags=["审核"])
 app.include_router(prompt_configs_router, prefix="/api/prompt-configs", tags=["Prompt配置"])
 app.include_router(tasks_router, prefix="/api/tasks", tags=["任务队列"])
 app.include_router(export_router, prefix="/api/export", tags=["导出"])
+
+project_root = Path(__file__).resolve().parents[2]
+uploads_dir = project_root / "uploads"
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 
 @app.on_event("startup")
