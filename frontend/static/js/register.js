@@ -4,13 +4,14 @@
 (function () {
   const form = document.getElementById("registerForm");
   const usernameInput = document.getElementById("reg-username");
+  const displayNameInput = document.getElementById("reg-display-name");
   const passwordInput = document.getElementById("reg-password");
   const password2Input = document.getElementById("reg-password2");
   const errorMessage = document.getElementById("errorMessage");
   const registerBtn = document.getElementById("registerBtn");
   const defaultBtnText = (registerBtn && registerBtn.textContent ? registerBtn.textContent.trim() : "") || "完成注册";
 
-  if (!form || !usernameInput || !passwordInput || !password2Input || !registerBtn) {
+  if (!form || !usernameInput || !displayNameInput || !passwordInput || !password2Input || !registerBtn) {
     return;
   }
 
@@ -20,11 +21,12 @@
     event.preventDefault();
 
     const username = usernameInput.value.trim();
+    const displayName = displayNameInput.value.trim();
     const password = passwordInput.value;
     const password2 = password2Input.value;
 
-    if (!username || !password || !password2) {
-      showError("请填写账号与密码");
+    if (!username || !displayName || !password || !password2) {
+      showError("请填写账号、用户名与密码");
       return;
     }
     if (password !== password2) {
@@ -43,6 +45,7 @@
       await api.post("/auth/register", {
         username,
         password,
+        display_name: displayName,
         role: "staff",
       });
       window.location.href = "login.html?registered=1";

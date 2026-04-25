@@ -15,17 +15,17 @@ from pydantic import BaseModel, Field
 
 class UserBase(BaseModel):
     """用户基础信息"""
-    username: str = Field(..., min_length=3, max_length=50, description="登录用户名")
+    username: str = Field(..., min_length=3, max_length=50, description="登录账号，全平台唯一")
 
 class UserCreate(UserBase):
     """创建用户请求"""
     password: str = Field(..., min_length=6, max_length=100, description="密码")
-    display_name: Optional[str] = Field(None, max_length=100, description="显示名称")
+    display_name: Optional[str] = Field(None, max_length=100, description="用户名/显示名，可重复")
     role: str = Field(default="staff", description="用户角色：director/staff/writer/reviewer")
 
 class UserLogin(BaseModel):
     """用户登录请求"""
-    username: str = Field(..., description="用户名")
+    username: str = Field(..., description="登录账号")
     password: str = Field(..., description="密码")
 
 class UserUpdate(BaseModel):

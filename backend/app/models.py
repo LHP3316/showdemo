@@ -17,7 +17,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, comment='用户ID，主键，自增')
     username = Column(String(50), unique=True, nullable=False, comment='登录用户名，唯一标识')
     password = Column(String(100), nullable=False, comment='密码哈希值（bcrypt加密）')
-    display_name = Column(String(100), comment='显示名称（用户真实姓名或昵称）')
+    display_name = Column(String(100), comment='显示名称/用户名，可重复；与登录账号独立')
     role = Column(
         Enum("director", "staff", "writer", "reviewer", name="user_role"),
         default="staff",

@@ -58,8 +58,14 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     existed = db.query(User).filter(User.username == user_in.username).first()
     if existed:
-        raise HTTPException(status_code=400, detail="用户名已存在")
-    user = User(username=user_in.username, password=get_password_hash(user_in.password), role=user_in.role)
+        raise HTTPException(status_code=400, detail="该登录账号已存在，请更换账号")
+    display_name = (user_in.display_name or "").strip() or None
+    user = User(
+        username=user_in.username,
+        password=get_password_hash(user_in.password),
+        role=user_in.role,
+        display_name=display_name,
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -70,7 +76,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 def login(user_in: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == user_in.username).first()
     if not user or not verify_password(user_in.password, user.password):
-        raise HTTPException(status_code=401, detail="用户名或密码错误")
+        raise HTTPException(status_code=401, detail="账号或密码错误")
     token = create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer", "user": user}
 

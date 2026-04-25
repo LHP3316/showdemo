@@ -21,7 +21,10 @@
         <p class="login-role-hint" aria-live="polite">身份：<strong>工作人员</strong>（<code>staff</code>，固定不可选）</p>
 
         <label class="login-label" for="reg-username">账号</label>
-        <input id="reg-username" name="username" class="static-login-input" type="text" autocomplete="username" minlength="3" maxlength="50" required placeholder="请输入登录账号（3–50 位）">
+        <input id="reg-username" name="username" class="static-login-input" type="text" autocomplete="username" minlength="3" maxlength="50" required placeholder="仅用于登录，全平台唯一（3–50 位）">
+
+        <label class="login-label" for="reg-display-name">用户名</label>
+        <input id="reg-display-name" name="display_name" class="static-login-input" type="text" autocomplete="name" maxlength="100" required placeholder="平台展示用，可与他人重名（最多 100 字）">
 
         <label class="login-label" for="reg-password">密码</label>
         <input id="reg-password" name="password" class="static-login-input" type="password" autocomplete="new-password" minlength="6" maxlength="100" required placeholder="请设置密码（至少 6 位）">
