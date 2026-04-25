@@ -16,6 +16,7 @@
       </div>
 
       <div class="script-localbar__right" aria-label="快捷操作">
+        <button class="script-btn script-btn--ghost" type="button" data-action="import">上传剧本文件</button>
         <button class="script-btn script-btn--ghost" type="button" data-action="save">保存草稿</button>
         <button class="script-btn script-btn--gold" type="button" data-action="submit">提交审核</button>
       </div>
@@ -43,13 +44,18 @@
 
         <div class="script-form">
           <div class="script-field">
-            <label for="script-title-input" class="script-label">集标题</label>
-            <input id="script-title-input" class="script-input" type="text" value="第七集 · 古龙苏醒">
+            <label for="script-project-intro-input" class="script-label">项目简介</label>
+            <textarea id="script-project-intro-input" class="script-input script-input--summary" rows="3" placeholder="可选：填写项目简介"></textarea>
           </div>
 
           <div class="script-field">
-            <label for="script-summary-input" class="script-label">集简介</label>
-            <textarea id="script-summary-input" class="script-input script-input--summary" rows="3">主角在追踪寻龙令的过程中，意外触发了沉睡千年的古龙印记。随着印记苏醒，主角不仅获得了龙族的特殊能力，也引来了黑暗势力的觊觎...</textarea>
+            <label for="script-title-input" class="script-label">集标题</label>
+            <input id="script-title-input" class="script-input" type="text" value="" placeholder="例如：第七集 · 古龙苏醒">
+          </div>
+
+          <div class="script-field">
+            <label for="script-episode-summary-input" class="script-label">集简介</label>
+            <textarea id="script-episode-summary-input" class="script-input script-input--summary" rows="3" placeholder="可选：填写本集简介"></textarea>
           </div>
 
           <div class="script-field">
@@ -58,10 +64,12 @@
               <button class="script-btn script-btn--purple script-btn--small" type="button" data-action="decompose">AI辅助创作</button>
             </div>
             <textarea id="script-editor" class="script-input script-input--editor" rows="18" placeholder="在这里编辑项目剧本..."></textarea>
+            <input id="script-file-input" type="file" accept=".txt,.md,.markdown" hidden>
           </div>
         </div>
 
         <footer class="script-bottom-actions" aria-label="底部操作">
+          <button class="script-btn script-btn--ghost script-btn--bottom" type="button" data-action="import">上传剧本文件</button>
           <button class="script-btn script-btn--ghost script-btn--bottom" type="button" data-action="save">保存草稿</button>
           <button class="script-btn script-btn--gold script-btn--bottom" type="button" data-action="submit">提交审核</button>
         </footer>

@@ -17,6 +17,11 @@ body {
   margin: 0;
 }
 
+/* 强制遵循 hidden 属性（避免被局部样式覆盖导致按钮仍可见） */
+[hidden] {
+  display: none !important;
+}
+
 .container {
   min-height: 100vh;
   background-color: #0a0a0f;
@@ -193,6 +198,240 @@ body {
 .login-page select.static-login-input option:active {
   background-color: rgba(255, 215, 0, 0.18);
   color: #fff;
+}
+
+/* ============================================================
+   通用弹层：项目分配（暗色主题）
+   ============================================================ */
+.assign-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.assign-modal {
+  width: min(520px, 96vw);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: rgba(18, 18, 26, 0.98);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+  font-family: "Noto Sans SC-Black", "Microsoft YaHei", sans-serif;
+}
+
+.assign-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 10px;
+}
+
+.assign-modal__title {
+  font-size: 16px;
+  margin: 0;
+  color: #fff;
+  font-weight: 600;
+}
+
+.assign-modal__sub {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.assign-modal__close {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  border-radius: 10px;
+  height: 34px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.assign-modal__body {
+  padding: 10px 18px 6px;
+}
+
+.assign-modal__label {
+  display: block;
+  font-size: 12px;
+  color: #d1d5db;
+  margin: 10px 0 8px;
+}
+
+.assign-modal__select {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 15px;
+  line-height: 44px;
+  padding: 0 14px;
+  outline: none;
+  color-scheme: dark;
+}
+
+.assign-modal__select:focus {
+  border-color: rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15);
+}
+
+/* 分配弹层下拉选项：增强暗色可读性（Windows/Chrome 原生下拉对比度偏低） */
+select.assign-modal__select {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d1d5db' d='M1.2 3.2h9.6L6 8.6 1.2 3.2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+select.assign-modal__select:hover {
+  border-color: rgba(255, 215, 0, 0.22);
+}
+
+select.assign-modal__select option,
+select.assign-modal__select optgroup {
+  background-color: #0f111a;
+  color: #f3f4f6;
+}
+
+select.assign-modal__select option:hover,
+select.assign-modal__select option:focus,
+select.assign-modal__select option:active {
+  background-color: rgba(255, 215, 0, 0.22);
+  color: #ffffff;
+}
+
+.assign-modal__hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.assign-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px 18px;
+}
+
+.assign-modal__btn {
+  height: 40px;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 0 14px;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+}
+
+.assign-modal__btn--primary {
+  border: 0;
+  color: #0a0a0f;
+  background: linear-gradient(90deg, #ffd700, #ffb700);
+  box-shadow: 0 8px 22px rgba(255, 215, 0, 0.22);
+}
+
+.assign-modal__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 全站公共提示弹框（替代浏览器 alert） */
+.global-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.global-dialog {
+  width: min(460px, 96vw);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: rgba(18, 18, 26, 0.98);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+  font-family: "Noto Sans SC-Black", "Microsoft YaHei", sans-serif;
+}
+
+.global-dialog[data-tone="error"] {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.global-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 8px;
+}
+
+.global-dialog__title {
+  margin: 0;
+  font-size: 16px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.global-dialog__close {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  border-radius: 10px;
+  height: 32px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.global-dialog__body {
+  padding: 8px 16px 4px;
+}
+
+.global-dialog__message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #e5e7eb;
+  white-space: pre-wrap;
+}
+
+.global-dialog[data-tone="error"] .global-dialog__message {
+  color: #fecaca;
+}
+
+.global-dialog__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px 16px;
+}
+
+.global-dialog__btn {
+  height: 38px;
+  border-radius: 10px;
+  border: 0;
+  cursor: pointer;
+  padding: 0 14px;
+  font-size: 13px;
+  color: #0a0a0f;
+  background: linear-gradient(90deg, #ffd700, #ffb700);
 }
 
 .login-page .static-login-error {

@@ -203,29 +203,18 @@
     const projectId = getProjectId();
     if (!projectId) return;
     if (!(currentUser && currentUser.role === "director")) return;
-
-    try {
-      const users = await api.get("/auth/users");
-      const staffUsers = (Array.isArray(users) ? users : []).filter((u) => u && u.role === "staff");
-      if (!staffUsers.length) {
-        setText("#project-assign-status", "暂无可分配的工作人员");
-        return;
-      }
-      const options = staffUsers.map((u) => `${u.id}:${u.display_name || u.username}`).join(" | ");
-      const raw = window.prompt(`请输入分配目标 staff ID。\n可选：${options}`);
-      if (!raw) return;
-      const assignedTo = Number(raw.trim());
-      if (!Number.isInteger(assignedTo) || assignedTo <= 0) {
-        setText("#project-assign-status", "请输入有效的 staff ID");
-        return;
-      }
-
-      await api.put(`/projects/${projectId}/assign?assigned_to=${assignedTo}`, {});
-      setText("#project-assign-status", `分配成功：工作人员 ID ${assignedTo}`);
-      if (cachedProject) cachedProject.assigned_to = assignedTo;
-      patchAssignAction(cachedProject || {});
-    } catch (err) {
-      setText("#project-assign-status", err && err.message ? err.message : "分配失败");
+    if (window.CommonApp && typeof CommonApp.openAssignModal === "function") {
+      CommonApp.openAssignModal({
+        projectId,
+        onAssigned: function (result) {
+          const staffId = result && result.staffId ? Number(result.staffId) : null;
+          if (staffId) {
+            setText("#project-assign-status", `分配成功：工作人员 ID ${staffId}`);
+            if (cachedProject) cachedProject.assigned_to = staffId;
+            patchAssignAction(cachedProject || {});
+          }
+        },
+      });
     }
   }
 

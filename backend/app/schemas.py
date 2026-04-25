@@ -71,6 +71,9 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     """创建项目请求"""
     script: Optional[str] = Field(None, description="剧本内容")
+    writer_name: Optional[str] = Field(None, max_length=100, description="编剧显示名（可选）")
+    episode_title: Optional[str] = Field(None, max_length=255, description="当前集标题（可选）")
+    episode_summary: Optional[str] = Field(None, description="当前集简介（可选）")
     assigned_to: Optional[int] = Field(None, description="分配的执行人员ID")
     deadline: Optional[datetime] = Field(None, description="截止日期")
 
@@ -79,6 +82,9 @@ class ProjectUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=255, description="项目标题")
     description: Optional[str] = Field(None, description="项目描述")
     script: Optional[str] = Field(None, description="剧本内容")
+    writer_name: Optional[str] = Field(None, max_length=100, description="编剧显示名（可选）")
+    episode_title: Optional[str] = Field(None, max_length=255, description="当前集标题（可选）")
+    episode_summary: Optional[str] = Field(None, description="当前集简介（可选）")
     genre: Optional[str] = Field(None, max_length=50, description="项目类型")
     episode_count: Optional[int] = Field(None, ge=1, description="总集数")
     current_episode: Optional[int] = Field(None, ge=1, description="当前处理集数")
@@ -90,6 +96,9 @@ class ProjectResponse(ProjectBase):
     """项目响应"""
     id: int
     script: Optional[str] = None
+    writer_name: Optional[str] = None
+    episode_title: Optional[str] = None
+    episode_summary: Optional[str] = None
     current_episode: int = 1
     status: str
     created_by: Optional[int] = None

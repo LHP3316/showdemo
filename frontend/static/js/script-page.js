@@ -3,6 +3,8 @@
  */
 (function () {
   let projectId = null;
+  let currentUser = null;
+  let importSubmitting = false;
 
   document.addEventListener("DOMContentLoaded", async function () {
     if (!window.CommonApp || !window.api) return;
@@ -10,17 +12,26 @@
     if (!ok) return;
 
     projectId = await ensureProjectId();
+    currentUser = safeJson(localStorage.getItem("user"));
+    if (!currentUser) {
+      try {
+        const me = await api.get("/auth/me");
+        currentUser = me;
+        localStorage.setItem("user", JSON.stringify(me));
+      } catch {
+        // ignore
+      }
+    }
     bindActions();
+    applyRoleUI();
     await loadData();
   });
 
   function bindActions() {
-    bindClick("#btn-save-script", saveScript);
-    bindClick("#btn-decompose", decomposeScript);
-    bindClick("#btn-submit-review", submitReview);
     bindAction("save", saveScript);
     bindAction("decompose", decomposeScript);
     bindAction("submit", submitReview);
+    bindAction("import", importScriptFile);
   }
 
   function bindClick(selector, handler) {
@@ -73,17 +84,26 @@
       setText("#script-page-subtitle", `${title} · 第${episode}集`);
       setText("#script-project-name", title);
       setText("#script-project-episode", `第${episode}集`);
-      setText("#script-project-writer", p.writer || "李编剧");
+      const writer =
+        (p.writer_name && String(p.writer_name).trim())
+        || (p.creator && (p.creator.display_name || p.creator.username))
+        || "未指定";
+      setText("#script-project-writer", writer);
       setText("#script-project-stage", p.status_label || "草稿编辑中");
 
-      const summaryNode = document.querySelector("#script-summary-input");
-      if (summaryNode) {
-        summaryNode.value = p.description || p.summary || summaryNode.value || "";
+      const projectIntroNode = document.querySelector("#script-project-intro-input");
+      if (projectIntroNode) {
+        projectIntroNode.value = p.description || "";
       }
 
       const episodeTitleNode = document.querySelector("#script-title-input");
-      if (episodeTitleNode && p.episode_title) {
-        episodeTitleNode.value = p.episode_title;
+      if (episodeTitleNode) {
+        episodeTitleNode.value = p.episode_title || "";
+      }
+
+      const episodeSummaryNode = document.querySelector("#script-episode-summary-input");
+      if (episodeSummaryNode) {
+        episodeSummaryNode.value = p.episode_summary || "";
       }
 
       const editor = document.querySelector("#script-editor");
@@ -126,12 +146,25 @@
   async function saveScript() {
     if (!projectId) return;
     const editor = document.querySelector("#script-editor");
+    const projectIntroNode = document.querySelector("#script-project-intro-input");
+    const episodeTitleNode = document.querySelector("#script-title-input");
+    const episodeSummaryNode = document.querySelector("#script-episode-summary-input");
     if (!editor) return;
     try {
-      await api.put(`/projects/${projectId}`, { script: editor.value });
+      await api.put(`/projects/${projectId}`, {
+        script: editor.value,
+        description: projectIntroNode ? String(projectIntroNode.value || "").trim() : undefined,
+        episode_title: episodeTitleNode ? String(episodeTitleNode.value || "").trim() : undefined,
+        episode_summary: episodeSummaryNode ? String(episodeSummaryNode.value || "").trim() : undefined,
+      });
       setStatus("Script saved");
+      if (window.CommonApp && typeof CommonApp.showInfo === "function") {
+        CommonApp.showInfo("草稿已保存");
+      }
     } catch (e) {
-      setStatus(e.message || "Save failed", true);
+      const msg = e.message || "Save failed";
+      setStatus(msg, true);
+      if (window.CommonApp && typeof CommonApp.showError === "function") CommonApp.showError(msg);
     }
   }
 
@@ -142,18 +175,82 @@
       setStatus("AI decompose completed");
       await loadData();
     } catch (e) {
-      setStatus(e.message || "Decompose failed", true);
+      const msg = e.message || "Decompose failed";
+      setStatus(msg, true);
+      if (window.CommonApp && typeof CommonApp.showError === "function") CommonApp.showError(msg);
     }
   }
 
   async function submitReview() {
     if (!projectId) return;
     try {
+      if (!(currentUser && currentUser.role === "staff")) {
+        const msg = "提交审核需要由工作人员执行（请先分配工作人员，并用工作人员账号提交）。";
+        setStatus(msg, true);
+        if (window.CommonApp && typeof CommonApp.showInfo === "function") CommonApp.showInfo(msg, "提示");
+        return;
+      }
       await api.post(`/projects/${projectId}/submit-review`);
       setStatus("Submitted for review");
       await loadData();
     } catch (e) {
-      setStatus(e.message || "Submit failed", true);
+      const msg = e.message || "Submit failed";
+      setStatus(msg, true);
+      if (window.CommonApp && typeof CommonApp.showError === "function") CommonApp.showError(msg);
+    }
+  }
+
+  function applyRoleUI() {
+    const role = currentUser && currentUser.role ? currentUser.role : "";
+    const canEditScript = role === "director" || role === "writer";
+    const isStaff = role === "staff";
+
+    // 编辑权限（导演/编剧可编辑；工作人员只读）
+    ["#script-project-intro-input", "#script-title-input", "#script-episode-summary-input", "#script-editor"].forEach((sel) => {
+      const node = document.querySelector(sel);
+      if (!node) return;
+      node.toggleAttribute("readonly", !canEditScript);
+      node.toggleAttribute("disabled", !canEditScript);
+    });
+    document.querySelectorAll("[data-action='save'],[data-action='decompose'],[data-action='import']").forEach((btn) => {
+      btn.toggleAttribute("hidden", !canEditScript);
+      btn.disabled = !canEditScript;
+      if (!canEditScript) btn.setAttribute("title", "仅导演/编剧可编辑剧本");
+    });
+
+    document.querySelectorAll("[data-action='submit']").forEach((btn) => {
+      btn.toggleAttribute("hidden", !isStaff);
+      btn.disabled = !isStaff;
+      if (!isStaff) btn.setAttribute("title", "仅工作人员可提交审核");
+    });
+  }
+
+  async function importScriptFile() {
+    if (importSubmitting) return;
+    const fileInput = document.getElementById("script-file-input");
+    const editor = document.querySelector("#script-editor");
+    if (!fileInput || !editor) return;
+
+    importSubmitting = true;
+    try {
+      fileInput.value = "";
+      fileInput.onchange = async function () {
+        try {
+          const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+          if (!file) return;
+          const text = await file.text();
+          editor.value = text || "";
+          setStatus(`已导入：${file.name}`);
+        } catch (e) {
+          const msg = (e && e.message) ? `导入失败：${e.message}` : "导入失败";
+          setStatus(msg, true);
+          if (window.CommonApp && typeof CommonApp.showError === "function") CommonApp.showError(msg);
+        }
+      };
+      fileInput.click();
+    } finally {
+      // 允许再次点击导入（真正读取在 onchange 里）
+      importSubmitting = false;
     }
   }
 
@@ -174,5 +271,14 @@
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;");
+  }
+
+  function safeJson(raw) {
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
   }
 })();

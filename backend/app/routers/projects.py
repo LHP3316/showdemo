@@ -60,6 +60,9 @@ async def create_project(
         title=body.title,
         description=body.description,
         script=body.script,
+        writer_name=(body.writer_name or None),
+        episode_title=(body.episode_title or None),
+        episode_summary=(body.episode_summary or None),
         genre=body.genre,
         episode_count=body.episode_count,
         current_episode=1,
@@ -124,17 +127,24 @@ async def list_projects(
     for project in projects:
         # 统计分镜数量
         scene_count = db.query(Scene).filter(Scene.project_id == project.id).count()
+        creator = project.creator
+        assignee = project.assignee
         
         items.append({
             "id": project.id,
             "title": project.title,
             "description": project.description,
+            "writer_name": getattr(project, "writer_name", None),
+            "episode_title": getattr(project, "episode_title", None),
+            "episode_summary": getattr(project, "episode_summary", None),
             "genre": project.genre,
             "episode_count": project.episode_count,
             "current_episode": project.current_episode,
             "status": project.status,
             "created_by": project.created_by,
             "assigned_to": project.assigned_to,
+            "creator_name": (creator.display_name or creator.username) if creator else None,
+            "assignee_name": (assignee.display_name or assignee.username) if assignee else None,
             "deadline": project.deadline.isoformat() if project.deadline else None,
             "scene_count": scene_count,
             "created_at": project.created_at.isoformat() if project.created_at else None,
@@ -203,17 +213,34 @@ async def get_project(
     scenes = db.query(Scene).filter(Scene.project_id == project_id).order_by(Scene.episode_number, Scene.scene_index).all()
     
     # 构建响应
+    creator = project.creator
+    assignee = project.assignee
     project_data = {
         "id": project.id,
         "title": project.title,
         "description": project.description,
         "script": project.script,
+        "writer_name": getattr(project, "writer_name", None),
+        "episode_title": getattr(project, "episode_title", None),
+        "episode_summary": getattr(project, "episode_summary", None),
         "genre": project.genre,
         "episode_count": project.episode_count,
         "current_episode": project.current_episode,
         "status": project.status,
         "created_by": project.created_by,
         "assigned_to": project.assigned_to,
+        "creator": {
+            "id": creator.id,
+            "username": creator.username,
+            "display_name": creator.display_name,
+            "role": creator.role,
+        } if creator else None,
+        "assignee": {
+            "id": assignee.id,
+            "username": assignee.username,
+            "display_name": assignee.display_name,
+            "role": assignee.role,
+        } if assignee else None,
         "deadline": project.deadline.isoformat() if project.deadline else None,
         "created_at": project.created_at.isoformat() if project.created_at else None,
         "updated_at": project.updated_at.isoformat() if project.updated_at else None,

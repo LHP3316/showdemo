@@ -6,6 +6,17 @@
   const skip = page === "login.html" || page === "index.html";
   if (skip) return;
 
+  // 默认关闭调试面板，避免干扰业务页面。
+  // 如需开启：控制台执行 localStorage.setItem("live_panel", "1")
+  const ENABLE_LIVE_PANEL = (function () {
+    try {
+      return localStorage.getItem("live_panel") === "1";
+    } catch {
+      return false;
+    }
+  })();
+  if (!ENABLE_LIVE_PANEL) return;
+
   document.addEventListener("DOMContentLoaded", async function () {
     if (!window.api || !window.CommonApp) return;
     const ok = await CommonApp.ensureSession(true);

@@ -78,3 +78,7 @@ const api = {
   },
 };
 
+// 提供给 static 页面其他脚本（workspace/common 等）直接访问
+window.api = api;
+window.apiRequest = apiRequest;
+

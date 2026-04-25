@@ -5,6 +5,9 @@
   const SNAPSHOT_MODE = false;
   let currentUser = null;
   let staffUsers = [];
+  let createProjectModalNode = null;
+  let dashboardLoading = false;
+  let createProjectSubmitting = false;
 
   document.addEventListener("DOMContentLoaded", async function () {
     document.body.classList.add("workspace-screen");
@@ -19,13 +22,27 @@
     const ok = await CommonApp.ensureSession(true);
     if (!ok) return;
     currentUser = safeJson(localStorage.getItem("user"));
+    // 兜底：有些情况下 localStorage.user 可能未及时写入或被清空
+    if (!currentUser) {
+      try {
+        const me = await api.get("/auth/me");
+        localStorage.setItem("user", JSON.stringify(me));
+        currentUser = me;
+      } catch {
+        // ignore
+      }
+    }
     applyRoleLayout();
+    // 兜底：即使后端接口暂时不可用，也先把欢迎语填上（避免一直显示 User）
+    patchWelcome(0);
+    // 兜底：某些浏览器/样式更新后可能导致事件丢失，二次绑定确保可点击
+    bindActions();
     await loadDashboard();
   });
 
   function bindActions() {
     bindClick("#btn-refresh", function () {
-      loadDashboard();
+      loadDashboard({ manual: true });
     });
     bindClick("#btn-new-project", createProjectAndOpen);
     bindClick("#stat-action-project", () => safeRouteTo("project"));
@@ -37,11 +54,16 @@
   function bindClick(selector, handler) {
     const node = document.querySelector(selector);
     if (!node) return;
+    if (node.dataset.boundClick === "1") return;
+    node.dataset.boundClick = "1";
     node.style.cursor = "pointer";
     node.addEventListener("click", handler);
   }
 
-  async function loadDashboard() {
+  async function loadDashboard(options = {}) {
+    if (dashboardLoading) return;
+    dashboardLoading = true;
+    setRefreshLoading(true);
     try {
       const requests = [
         api.get("/projects/stats"),
@@ -64,12 +86,18 @@
       const users = Array.isArray(usersRes) ? usersRes : [];
       staffUsers = users.filter((u) => u && u.role === "staff");
 
-      const activeTasks = tasks.filter((t) => t.status === "pending" || t.status === "processing" || t.status === "running");
+      const activeTasks = tasks.filter((t) =>
+        t && (t.status === "pending" || t.status === "processing" || t.status === "running" || t.status === "success")
+      );
+
+      const staffFallbackTasks = isDirector() ? [] : buildProjectLevelTasks(projects);
+      const staffTaskCount = isDirector() ? 0 : ((activeTasks.length ? activeTasks.length : staffFallbackTasks.length));
+
       setText("#stat-total", String(stats.total || 0));
-      setText("#stat-pending-tasks", String(activeTasks.length));
+      setText("#stat-pending-tasks", String(isDirector() ? activeTasks.length : staffTaskCount));
       setText("#stat-review", String(isDirector() ? pending.length : (stats.review || 0)));
       setText("#stat-done", String(stats.approved || 0));
-      setText("#tasks-count-pill", isDirector() ? `${pending.length} 个待审核` : `${activeTasks.length} 个待处理`);
+      setText("#tasks-count-pill", isDirector() ? `${pending.length} 个待审核` : `${staffTaskCount} 个待处理`);
 
       if (projects[0] && projects[0].id) {
         localStorage.setItem("activeProjectId", String(projects[0].id));
@@ -80,12 +108,18 @@
         patchDirectorTaskPanel(projects, pending);
         patchDirectorProjectList(projects);
       } else {
-        patchStaffTaskList(activeTasks);
+        patchStaffTaskList(activeTasks, projects);
         patchStaffProjectList(projects);
+      }
+      if (options.manual) {
+        setText("#workspace-subtitle", "数据已刷新");
       }
     } catch (err) {
       console.error("Failed to load workspace data:", err);
       setText("#workspace-subtitle", "数据加载失败，请点击刷新重试");
+    } finally {
+      dashboardLoading = false;
+      setRefreshLoading(false);
     }
   }
 
@@ -154,7 +188,7 @@
   }
 
   function patchWelcome(totalProjects) {
-    const user = safeJson(localStorage.getItem("user"));
+    const user = currentUser || safeJson(localStorage.getItem("user"));
     const name = (user && (user.display_name || user.username)) || "User";
     const first = name.charAt(0).toUpperCase();
     setText("#workspace-welcome", `欢迎回来，${name}`);
@@ -163,26 +197,37 @@
     setText("#top-avatar", first);
   }
 
-  function patchStaffTaskList(tasks) {
+  function patchStaffTaskList(tasks, projects) {
     const list = document.querySelector("#task-list");
     if (!list) return;
 
-    if (!tasks.length) {
+    // 优先展示真实任务队列；若队列为空，退化为“项目级任务”，避免工作人员页面长期空白。
+    const queueTasks = Array.isArray(tasks) ? tasks : [];
+    const fallbackTasks = buildProjectLevelTasks(Array.isArray(projects) ? projects : []);
+    const merged = queueTasks.length ? queueTasks : fallbackTasks;
+
+    if (!merged.length) {
       list.innerHTML = taskEmptyHtml();
       return;
     }
 
-    list.innerHTML = tasks.slice(0, 4).map((t) => {
-      const sceneText = `任务类型：${escapeHtml(t.task_type || "-")} · 进度 ${escapeHtml(String(t.progress || 0))}%`;
+    list.innerHTML = merged.slice(0, 4).map((t) => {
+      const isProjectTask = t.__kind === "project";
+      const sceneText = isProjectTask
+        ? `项目任务：${escapeHtml(t.task_type || "项目执行")} · 状态 ${escapeHtml(mapProjectStatus(t.project_status || "processing"))}`
+        : `任务类型：${escapeHtml(t.task_type || "-")} · 进度 ${escapeHtml(String(t.progress || 0))}%`;
       const due = formatDate(t.created_at || t.updated_at || new Date().toISOString());
-      const route = t.task_type === "img2video" ? "render" : "script";
+      const route = isProjectTask
+        ? "project"
+        : (t.task_type === "img2video" ? "render" : "script");
+      const routeProjectId = t.project_id || "";
       return `
         <li class="item-card item-card-task">
-          <h3 class="item-title">任务 #${t.id}</h3>
+          <h3 class="item-title">${isProjectTask ? `项目任务 #${escapeHtml(String(t.project_id || "-"))}` : `任务 #${t.id}`}</h3>
           <p class="item-subtitle">${sceneText}</p>
           <div class="item-foot">
             <span class="pill">${escapeHtml(mapTaskStatus(t.status))} · ${escapeHtml(due)}</span>
-            <button class="link-btn data-enter-task" data-route="${route}" type="button">进入工位</button>
+            <button class="link-btn data-enter-task" data-route="${route}" data-project-id="${escapeHtml(String(routeProjectId))}" type="button">进入工位</button>
           </div>
         </li>
       `;
@@ -191,10 +236,29 @@
     list.querySelectorAll(".data-enter-task").forEach((el) => {
       el.addEventListener("click", function () {
         const route = el.getAttribute("data-route");
+        const projectId = el.getAttribute("data-project-id");
+        if (projectId) localStorage.setItem("activeProjectId", String(projectId));
         if (!route) return;
         safeRouteTo(route);
       });
     });
+  }
+
+  function buildProjectLevelTasks(projects) {
+    return projects
+      .filter((p) => p && p.id && p.status !== "approved")
+      .slice(0, 8)
+      .map((p) => ({
+        __kind: "project",
+        id: `p-${p.id}`,
+        project_id: p.id,
+        project_status: p.status || "processing",
+        task_type: "项目执行",
+        status: p.status === "review" ? "processing" : "pending",
+        progress: 0,
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+      }));
   }
 
   function patchDirectorProjectList(projects) {
@@ -286,58 +350,43 @@
 
   async function assignProjectFlow(projectId) {
     if (!isDirector()) return;
-    if (!staffUsers.length) {
-      try {
-        const users = await api.get("/auth/users");
-        staffUsers = (Array.isArray(users) ? users : []).filter((u) => u && u.role === "staff");
-      } catch {
-        // ignore
-      }
-    }
-    if (!staffUsers.length) {
-      setText("#workspace-subtitle", "暂无可分配的工作人员账号");
-      return;
-    }
-    const options = staffUsers.map((u) => `${u.id}:${u.display_name || u.username}`).join(" | ");
-    const raw = window.prompt(`请输入分配目标 staff ID。\n可选：${options}`);
-    if (!raw) return;
-    const assignedTo = Number(raw.trim());
-    if (!Number.isInteger(assignedTo) || assignedTo <= 0) {
-      setText("#workspace-subtitle", "请输入有效的 staff ID");
-      return;
-    }
-    try {
-      await api.put(`/projects/${projectId}/assign?assigned_to=${assignedTo}`, {});
-      setText("#workspace-subtitle", `项目 ${projectId} 分配成功`);
-      await loadDashboard();
-    } catch (err) {
-      setText("#workspace-subtitle", err && err.message ? err.message : "分配失败");
+    if (window.CommonApp && typeof CommonApp.openAssignModal === "function") {
+      CommonApp.openAssignModal({
+        projectId,
+        onAssigned: async function () {
+          setText("#workspace-subtitle", `项目 ${projectId} 分配成功`);
+          await loadDashboard();
+        },
+      });
     }
   }
 
   async function createProjectAndOpen() {
+    console.log("[workspace] click new project button");
     if (SNAPSHOT_MODE) return;
+    // 每次创建前拉一次实时身份，避免 localStorage 角色过期/错乱
+    try {
+      const me = await api.get("/auth/me");
+      if (me) {
+        currentUser = me;
+        localStorage.setItem("user", JSON.stringify(me));
+      }
+    } catch {
+      // ignore, fall through to local role check
+    }
+
     if (!isDirector()) {
-      setText("#workspace-subtitle", "仅导演可新建项目");
+      console.log("[workspace] role check failed", currentUser);
+      const role = currentUser && currentUser.role ? currentUser.role : "unknown";
+      const msg = `仅导演可新建项目。\n当前账号角色：${role}`;
+      setText("#workspace-subtitle", msg);
+      if (window.CommonApp && typeof CommonApp.showError === "function") {
+        CommonApp.showError(msg, "权限不足");
+      }
       return;
     }
-    if (!window.api) return;
-    try {
-      const now = new Date();
-      const title = `新项目 ${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-      const res = await api.post("/projects/", {
-        title,
-        description: "创建于工作台快捷入口",
-        genre: "custom",
-        episode_count: 1,
-      });
-      const projectId = res && res.data && res.data.id;
-      if (!projectId) return;
-      localStorage.setItem("activeProjectId", String(projectId));
-      window.location.href = `project.html?id=${projectId}`;
-    } catch (err) {
-      console.error("Create project failed:", err);
-    }
+    console.log("[workspace] role check passed, open modal");
+    openCreateProjectModal();
   }
 
   function taskEmptyHtml() {
@@ -373,7 +422,9 @@
     const map = {
       pending: "待处理",
       processing: "进行中",
+      running: "进行中",
       completed: "已完成",
+      success: "已完成",
       failed: "失败",
     };
     return map[status] || "待处理";
@@ -435,8 +486,11 @@
 
     const newBtn = document.querySelector("#btn-new-project");
     if (newBtn) {
-      newBtn.toggleAttribute("hidden", !isDirector());
-      newBtn.textContent = isDirector() ? "+ 新建项目" : "";
+      const show = isDirector();
+      newBtn.toggleAttribute("hidden", !show);
+      newBtn.disabled = !show;
+      newBtn.style.display = show ? "" : "none";
+      newBtn.textContent = show ? "+ 新建项目" : "";
     }
 
     setText("#stat-action-project .stat-title", isDirector() ? "全部项目" : "我的作品");
@@ -444,9 +498,183 @@
     setText("#stat-action-review .stat-title", isDirector() ? "待审核" : "审核状态");
   }
 
+  function setRefreshLoading(loading) {
+    const btn = document.querySelector("#btn-refresh");
+    if (!btn) return;
+    btn.disabled = !!loading;
+    btn.textContent = loading ? "刷新中..." : "刷新";
+  }
+
   function renderSnapshotFallback() {
     setText("#workspace-welcome", "欢迎回来");
     setText("#workspace-subtitle", "演示模式");
+  }
+
+  function openCreateProjectModal() {
+    console.log("[workspace] openCreateProjectModal");
+    mountCreateProjectModal();
+    if (!createProjectModalNode) return;
+    const titleInput = createProjectModalNode.querySelector("#create-project-title");
+    if (titleInput) {
+      const now = new Date();
+      titleInput.value = `新项目 ${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+      setTimeout(() => {
+        try { titleInput.focus(); } catch { /* no-op */ }
+      }, 0);
+    }
+  }
+
+  function mountCreateProjectModal() {
+    if (createProjectModalNode && document.body.contains(createProjectModalNode)) return;
+    console.log("[workspace] mount create project modal");
+    const overlay = document.createElement("div");
+    overlay.className = "assign-modal-overlay";
+    overlay.innerHTML = `
+      <section class="assign-modal" role="dialog" aria-modal="true" aria-labelledby="create-project-title-label">
+        <header class="assign-modal__head">
+          <div>
+            <h2 class="assign-modal__title" id="create-project-title-label">新建项目</h2>
+            <p class="assign-modal__sub">填写项目基础信息后进入项目详情页</p>
+          </div>
+          <button type="button" class="assign-modal__close" id="create-project-close">关闭</button>
+        </header>
+        <div class="assign-modal__body">
+          <label class="assign-modal__label" for="create-project-title">项目标题</label>
+          <input id="create-project-title" class="assign-modal__select" type="text" maxlength="255" placeholder="请输入项目标题">
+
+          <label class="assign-modal__label" for="create-project-genre">项目类型</label>
+          <input id="create-project-genre" class="assign-modal__select" type="text" maxlength="50" placeholder="如：古风 / 科幻 / 都市">
+
+          <label class="assign-modal__label" for="create-project-episodes">总集数</label>
+          <input id="create-project-episodes" class="assign-modal__select" type="number" min="1" max="999" value="1">
+
+          <label class="assign-modal__label" for="create-project-desc">项目描述</label>
+          <textarea id="create-project-desc" class="assign-modal__select" style="height:88px;padding:10px 12px;resize:vertical;" placeholder="可选：填写项目说明"></textarea>
+          <p id="create-project-status" class="assign-modal__hint" style="margin-top:10px;"></p>
+        </div>
+        <footer class="assign-modal__foot">
+          <button type="button" class="assign-modal__btn" id="create-project-cancel">取消</button>
+          <button type="button" class="assign-modal__btn assign-modal__btn--primary" id="create-project-confirm">创建项目</button>
+        </footer>
+      </section>
+    `;
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) closeCreateProjectModal();
+    });
+    document.body.appendChild(overlay);
+    createProjectModalNode = overlay;
+
+    overlay.querySelector("#create-project-close")?.addEventListener("click", closeCreateProjectModal);
+    overlay.querySelector("#create-project-cancel")?.addEventListener("click", closeCreateProjectModal);
+    const confirmBtn = overlay.querySelector("#create-project-confirm");
+    if (confirmBtn) {
+      if (confirmBtn.dataset.boundClick !== "1") {
+        confirmBtn.dataset.boundClick = "1";
+        confirmBtn.addEventListener("click", submitCreateProject);
+      }
+      console.log("[workspace] bind create-project-confirm click");
+    }
+  }
+
+  function closeCreateProjectModal() {
+    if (!createProjectModalNode) return;
+    if (createProjectModalNode.parentNode) createProjectModalNode.parentNode.removeChild(createProjectModalNode);
+    createProjectModalNode = null;
+  }
+
+  async function submitCreateProject() {
+    console.log("[workspace] click create-project-confirm");
+    if (createProjectSubmitting) return;
+    if (!createProjectModalNode) return;
+    const apiClient =
+      (typeof window !== "undefined" && window.api)
+      || (typeof api !== "undefined" ? api : null);
+    if (!apiClient) {
+      console.error("[workspace] api client is unavailable");
+      const statusNode = createProjectModalNode.querySelector("#create-project-status");
+      if (statusNode) statusNode.textContent = "初始化失败：api 客户端未加载";
+      if (window.CommonApp && typeof CommonApp.showError === "function") {
+        CommonApp.showError("初始化失败：api 客户端未加载");
+      }
+      return;
+    }
+    const statusNode = createProjectModalNode.querySelector("#create-project-status");
+    if (statusNode) statusNode.textContent = "";
+    const title = valueOf("#create-project-title");
+    const genre = valueOf("#create-project-genre");
+    const desc = valueOf("#create-project-desc");
+    const episodesRaw = valueOf("#create-project-episodes");
+    const episodeCount = Number(episodesRaw || "1");
+
+    if (!title) {
+      console.log("[workspace] validate failed: empty title");
+      if (statusNode) statusNode.textContent = "请填写项目标题";
+      if (window.CommonApp && typeof CommonApp.showError === "function") {
+        CommonApp.showError("请填写项目标题");
+      }
+      return;
+    }
+    if (!Number.isInteger(episodeCount) || episodeCount < 1) {
+      console.log("[workspace] validate failed: invalid episode_count", episodesRaw);
+      if (statusNode) statusNode.textContent = "总集数需为大于 0 的整数";
+      if (window.CommonApp && typeof CommonApp.showError === "function") {
+        CommonApp.showError("总集数需为大于 0 的整数");
+      }
+      return;
+    }
+
+    const confirmBtn = createProjectModalNode.querySelector("#create-project-confirm");
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "创建中…";
+    }
+    createProjectSubmitting = true;
+    if (statusNode) statusNode.textContent = "正在创建项目，请稍候…";
+    try {
+      console.log("[workspace] creating project payload", {
+        title,
+        description: desc || "创建于工作台弹窗",
+        genre: genre || "custom",
+        episode_count: episodeCount,
+      });
+      setText("#workspace-subtitle", "正在创建项目…");
+      const res = await apiClient.post("/projects/", {
+        title,
+        description: desc || "创建于工作台弹窗",
+        genre: genre || "custom",
+        episode_count: episodeCount,
+      });
+      console.log("[workspace] create project api response", res);
+      const projectId = res && res.data && res.data.id;
+      if (!projectId) {
+        console.log("[workspace] create project response missing id", res);
+        throw new Error("后端未返回项目ID");
+      }
+      console.log("[workspace] create success, goto project", projectId);
+      closeCreateProjectModal();
+      localStorage.setItem("activeProjectId", String(projectId));
+      window.location.href = `project.html?id=${projectId}`;
+    } catch (err) {
+      console.error("[workspace] create project failed", err);
+      const msg = (err && err.message) ? `新建失败：${err.message}` : "新建失败";
+      setText("#workspace-subtitle", msg);
+      if (statusNode) statusNode.textContent = msg;
+      if (window.CommonApp && typeof CommonApp.showError === "function") {
+        CommonApp.showError(msg);
+      }
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "创建项目";
+      }
+    } finally {
+      createProjectSubmitting = false;
+    }
+  }
+
+  function valueOf(selector) {
+    if (!createProjectModalNode) return "";
+    const node = createProjectModalNode.querySelector(selector);
+    return node ? String(node.value || "").trim() : "";
   }
 })();
 

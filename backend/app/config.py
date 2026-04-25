@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -14,11 +14,17 @@ class Settings(BaseSettings):
 
     LLM_API_KEY: str = ""
     LLM_API_URL: str = ""
+    LLM_MODEL: str = ""
     GEEKNOW_API_URL: str = ""
     GEEKNOW_API_KEY: str = ""
 
-    class Config:
-        env_file = ".env"
+    # showdemo 拆解服务扩展配置（可选）
+    SHOWDEMO_LLM_BASE_URL: str = ""
+    SHOWDEMO_LLM_API_KEY: str = ""
+    SHOWDEMO_LLM_MODEL: str = ""
+    SHOWDEMO_LLM_TIMEOUT_SEC: int = 120
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()
