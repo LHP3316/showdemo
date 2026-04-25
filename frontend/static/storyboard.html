@@ -5,46 +5,128 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>分镜工位 - AI短剧协作平台</title>
   <link rel="stylesheet" href="css/font.css">
-  <link rel="stylesheet" href="css/workbench-modern.css">
+  <link rel="stylesheet" href="css/storyboard-modern.css">
 </head>
-<body>
-  <main class="app-page">
-    <section class="page-header">
-      <h1 id="storyboard-page-title" class="page-title">分镜工位</h1>
-      <p id="storyboard-page-subtitle" class="page-subtitle">加载中...</p>
-      <div id="storyboard-status" class="status-line">Ready</div>
+<body class="storyboard-screen">
+  <main class="sb-page" aria-label="分镜工位">
+    <section class="sb-localbar" aria-label="分镜工位头部">
+      <div class="sb-localbar__left">
+        <button id="sb-back" class="sb-back" type="button" aria-label="返回">返回</button>
+        <h1 id="storyboard-page-title" class="sb-title">分镜工位</h1>
+        <p id="storyboard-page-subtitle" class="sb-badge">寻龙少年 · 第6集</p>
+      </div>
+
+      <div class="sb-localbar__right" aria-label="快捷操作">
+        <button id="btn-batch-image" class="sb-btn sb-btn--gold" type="button">AI生成全部分镜</button>
+        <button id="btn-save-draft" class="sb-btn sb-btn--ghost" type="button">保存草稿</button>
+        <button id="btn-submit-review" class="sb-btn sb-btn--green" type="button">提交审核</button>
+      </div>
     </section>
 
-    <section class="grid-2">
-      <article class="panel">
-        <h2 class="panel-title">新增分镜</h2>
-        <div class="actions">
-          <input id="scene-description" class="input" placeholder="场景描述">
-          <input id="scene-prompt" class="input" placeholder="AI Prompt">
+    <section class="sb-layout" aria-label="分镜工位布局">
+      <aside class="sb-sidebar" aria-label="分镜列表">
+        <header class="sb-panel-head">
+          <h2 class="sb-panel-title sb-panel-title--sidebar">分镜列表</h2>
+          <span id="sb-scene-count" class="sb-count">24场</span>
+        </header>
+        <div class="sb-list" id="sb-scene-list" role="list">
+          <article class="sb-item is-active" role="listitem" data-id="seed-3">
+            <span class="sb-item__icon">□</span>
+            <div>
+              <h3 class="sb-item__name">Scene 03</h3>
+              <p class="sb-item__subtitle">中景，主角缓缓走向神秘石碑前</p>
+            </div>
+          </article>
+          <article class="sb-item" role="listitem" data-id="seed-1">
+            <span class="sb-item__icon is-done">✓</span>
+            <div>
+              <h3 class="sb-item__name">Scene 01</h3>
+              <p class="sb-item__subtitle">摄像机从高处俯拍，主角骑马奔跑</p>
+            </div>
+          </article>
+          <article class="sb-item" role="listitem" data-id="seed-2">
+            <span class="sb-item__icon is-done">✓</span>
+            <div>
+              <h3 class="sb-item__name">Scene 02</h3>
+              <p class="sb-item__subtitle">近景特写，主角转身发现龙骨遗迹</p>
+            </div>
+          </article>
+          <article class="sb-item" role="listitem" data-id="seed-4">
+            <span class="sb-item__icon">◷</span>
+            <div>
+              <h3 class="sb-item__name">Scene 04</h3>
+              <p class="sb-item__subtitle">广角全景，远山云雾缭绕背景</p>
+            </div>
+          </article>
+          <article class="sb-item" role="listitem" data-id="seed-5">
+            <span class="sb-item__icon">◷</span>
+            <div>
+              <h3 class="sb-item__name">Scene 05</h3>
+              <p class="sb-item__subtitle">主角取出宝剑，发出金色光芒</p>
+            </div>
+          </article>
         </div>
-        <div class="actions" style="margin-top:10px;">
-          <button id="btn-add-scene" class="btn btn-primary" type="button">新增分镜</button>
-          <button id="btn-batch-image" class="btn" type="button">批量文生图</button>
-          <button id="btn-batch-video" class="btn" type="button">批量图生视频</button>
-        </div>
-      </article>
+      </aside>
 
-      <article class="panel">
-        <h2 class="panel-title">分镜列表</h2>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>描述</th>
-              <th>状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="scene-table-body">
-            <tr><td colspan="4">暂无数据</td></tr>
-          </tbody>
-        </table>
-      </article>
+      <section class="sb-canvas" aria-label="分镜预览">
+        <div class="sb-preview">
+          <img id="sb-preview-image" class="sb-preview-image" src="assets/image/preview.png" alt="分镜预览图">
+        </div>
+
+        <div class="sb-timeline" aria-label="分镜信息">
+          <span class="sb-timeline__tag" id="sb-active-tag">Scene 03 / 第6集</span>
+          <p class="sb-timeline__desc" id="sb-active-desc">中景，主角缓缓走向神秘石碑前</p>
+          <span class="sb-timeline__spacer"></span>
+          <button class="sb-mini" id="sb-prev" type="button" aria-label="上一场">‹</button>
+          <button class="sb-mini" id="sb-next" type="button" aria-label="下一场">›</button>
+        </div>
+
+        <div id="storyboard-status" class="sb-status" aria-live="polite"></div>
+      </section>
+
+      <aside class="sb-editor" aria-label="场景编辑">
+        <header class="sb-panel-head sb-panel-head--editor">
+          <h2 class="sb-panel-title sb-panel-title--editor">场景编辑</h2>
+          <p id="sb-editor-title" class="sb-panel-sub">Scene 03 · 第6集</p>
+        </header>
+
+        <section class="sb-form" aria-label="编辑表单">
+          <div class="sb-field">
+            <label class="sb-label">镜头类型</label>
+            <div class="sb-chips" role="group" aria-label="镜头类型">
+              <button class="sb-chip is-active" type="button" data-shot="中景">中景</button>
+              <button class="sb-chip" type="button" data-shot="特写">特写</button>
+              <button class="sb-chip" type="button" data-shot="全景">全景</button>
+            </div>
+          </div>
+
+          <div class="sb-field">
+            <label class="sb-label" for="scene-description">场景描述</label>
+            <textarea id="scene-description" class="sb-textarea" placeholder="请输入场景描述"></textarea>
+          </div>
+
+          <div class="sb-field">
+            <label class="sb-label" for="scene-prompt">AI提示词</label>
+            <textarea id="scene-prompt" class="sb-textarea sb-textarea--prompt" placeholder="请输入AI提示词"></textarea>
+          </div>
+
+          <div class="sb-field">
+            <label class="sb-label" for="scene-camera">运镜方式</label>
+            <select id="scene-camera" class="sb-select" aria-label="运镜方式">
+              <option value="Follow Dolly">跟随推进 (Follow Dolly)</option>
+              <option value="Static">固定机位 (Static)</option>
+              <option value="Pan">平移摇镜 (Pan)</option>
+              <option value="Tilt">俯仰摇镜 (Tilt)</option>
+              <option value="Handheld">手持抖动 (Handheld)</option>
+            </select>
+          </div>
+
+          <div class="sb-actions" aria-label="生成操作">
+            <button id="btn-gen-image" class="sb-btn sb-btn--gold sb-btn--wide" type="button">文生图</button>
+            <button id="btn-gen-video" class="sb-btn sb-btn--purple sb-btn--wide" type="button">图生视频</button>
+          </div>
+        </section>
+      </aside>
     </section>
   </main>
 
