@@ -17,7 +17,7 @@
 
   function bindActions() {
     bindClick("#btn-go-script", goToScriptWorkbench);
-    bindClick("#btn-go-storyboard", () => goToWorkbench("storyboard"));
+    bindClick("#btn-go-storyboard", goToStoryboardWorkbench);
     bindClick("#btn-go-render", () => goToWorkbench("render"));
     bindClick("#btn-go-review", () => goToWorkbench("review"));
     bindClick("#btn-go-export", () => goToWorkbench("export"));
@@ -112,6 +112,22 @@
   function goToScriptWorkbench() {
     // 允许导演进入剧本工位；具体是否可编辑由剧本页按资产状态控制只读
     goToWorkbench("script");
+  }
+
+  function goToStoryboardWorkbench() {
+    const isStaff = !!(currentUser && currentUser.role === "staff");
+    if (isStaff) {
+      const scenes = Array.isArray(cachedProject && cachedProject.scenes) ? cachedProject.scenes : [];
+      if (!scenes.length) {
+        if (window.CommonApp && typeof CommonApp.showInfo === "function") {
+          CommonApp.showInfo("当前项目暂无分镜，暂时无法进入分镜工位。", "无法进入");
+        } else {
+          window.alert("当前项目暂无分镜，暂时无法进入分镜工位。");
+        }
+        return;
+      }
+    }
+    goToWorkbench("storyboard");
   }
 
   function goResolveBlocker() {
