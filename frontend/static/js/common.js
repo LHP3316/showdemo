@@ -12,7 +12,7 @@
     script: "script.html",
     storyboard: "storyboard.html",
     render: "render.html",
-    review: "review-workbench.html",
+    review: "review.html",
     export: "export.html",
   };
 
@@ -320,6 +320,7 @@
       project: "project",
       render: "render",
       review: "review",
+      "review-workbench": "review",
       script: "project",
       storyboard: "project",
       export: "render",

@@ -140,6 +140,35 @@ body.review-session-screen #static-global-footer {
   align-items: start;
 }
 
+.rsa-pagination {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.rsa-page-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rsa-page-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.rsa-page-info {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
 /* 左：分镜预览（无外框，与页面背景一体） */
 .rsa-preview {
   border: none;

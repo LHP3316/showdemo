@@ -91,7 +91,7 @@
 
       tasks = [];
       try {
-        const tasksRes = await api.get("/api/tasks", { page: 1, size: 100 });
+        const tasksRes = await api.get("/api/tasks/tasks", { page: 1, size: 100 });
         const taskPayload = tasksRes && tasksRes.data;
         const allTaskItems = (taskPayload && taskPayload.items) || [];
         const sceneIds = new Set(scenes.map((s) => Number(s.id)));
@@ -393,7 +393,22 @@
   function resolveMediaUrl(url) {
     const text = String(url || "").trim();
     if (!text) return "";
+    // 标准后端相对路径
     if (text.startsWith("/uploads/")) return `${BACKEND_MEDIA_BASE}${text}`;
+    // 无前导斜杠的 uploads 路径
+    if (text.startsWith("uploads/")) return `${BACKEND_MEDIA_BASE}/${text}`;
+    // Windows 风格分隔符
+    if (text.startsWith("\\uploads\\")) {
+      return `${BACKEND_MEDIA_BASE}${text.replaceAll("\\", "/")}`;
+    }
+    // 绝对本地路径里包含 uploads（例如 D:\Project\...\uploads\xxx.png）
+    const normalized = text.replaceAll("\\", "/");
+    const marker = "/uploads/";
+    const idx = normalized.toLowerCase().indexOf(marker);
+    if (idx >= 0) {
+      const rel = normalized.slice(idx);
+      return `${BACKEND_MEDIA_BASE}${rel}`;
+    }
     return text;
   }
 

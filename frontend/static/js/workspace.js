@@ -182,7 +182,7 @@
         const projectId = el.getAttribute("data-id");
         if (!projectId) return;
         localStorage.setItem("review_focus_project_id", String(projectId));
-        window.location.href = "review-workbench.html";
+        window.location.href = `review-workbench.html?id=${encodeURIComponent(String(projectId))}`;
       });
     });
   }
@@ -270,11 +270,13 @@
     }
 
     list.innerHTML = projects.slice(0, 8).map((p) => {
-      const iconClass = `icon-${getIconSeed(String(p.id || ""))}`;
+      const coverUrl = getProjectCoverUrl(p);
       const assignedText = p.assigned_to ? `已分配 #${p.assigned_to}` : "未分配";
       return `
         <li class="item-card item-card-project" data-id="${p.id}">
-          <span class="project-icon ${iconClass}" aria-hidden="true"></span>
+          <span class="project-icon" aria-hidden="true">
+            <img class="project-icon__img ${coverUrl ? "" : "is-fallback"}" src="${escapeHtml(coverUrl || "tu.png")}" alt="项目封面">
+          </span>
           <div class="project-main">
             <h3 class="item-title">${escapeHtml(p.title || "未命名项目")}</h3>
             <p class="item-subtitle">${escapeHtml(p.genre || "未分类")} · ${p.episode_count || 0}集 · ${escapeHtml(assignedText)}</p>
@@ -437,6 +439,13 @@
       total += idText.charCodeAt(i);
     }
     return seedMap[total % seedMap.length];
+  }
+
+  function getProjectCoverUrl(project) {
+    const raw = project && project.cover_image_url ? String(project.cover_image_url).trim() : "";
+    if (!raw) return "";
+    if (raw.startsWith("/uploads/")) return `http://localhost:8001${raw}`;
+    return raw;
   }
 
   function setText(selector, text) {

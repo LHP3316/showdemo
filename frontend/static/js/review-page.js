@@ -8,9 +8,10 @@
  */
 (function () {
   const BACKEND_MEDIA_BASE = "http://localhost:8001";
-  let projectId = null;
   let projectItems = [];
-  let selectedStatus = "approved";
+  let page = 1;
+  let size = 12;
+  let total = 0;
 
   document.addEventListener("DOMContentLoaded", async function () {
     if (!window.CommonApp || !window.api) return;
@@ -22,82 +23,51 @@
   });
 
   function bindActions() {
-    const form = document.querySelector("#review-comment-form");
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        submitReview();
+    const prevBtn = document.querySelector("#review-page-prev");
+    const nextBtn = document.querySelector("#review-page-next");
+    if (prevBtn) {
+      prevBtn.addEventListener("click", async function () {
+        if (page <= 1) return;
+        page -= 1;
+        await loadReviewProjects();
       });
     }
-
-    const passBtn = document.querySelector("#btn-review-pass");
-    if (passBtn) {
-      passBtn.addEventListener("click", function () {
-        selectedStatus = "approved";
-        submitReview();
-      });
-    }
-
-    const rejectBtn = document.querySelector("#btn-review-reject");
-    if (rejectBtn) {
-      rejectBtn.addEventListener("click", function () {
-        selectedStatus = "rejected";
-        submitReview();
-      });
-    }
-
-    const cancelBtn = document.querySelector("#btn-review-cancel");
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", function () {
-        const box = document.querySelector("#review-comment-text");
-        if (box) box.value = "";
-        setStatus("已清空审核意见");
+    if (nextBtn) {
+      nextBtn.addEventListener("click", async function () {
+        const totalPages = Math.max(1, Math.ceil(total / size));
+        if (page >= totalPages) return;
+        page += 1;
+        await loadReviewProjects();
       });
     }
   }
 
   async function loadReviewProjects() {
     try {
-      const res = await api.get("/api/reviews/projects?size=100");
-      const items = (res && res.data && Array.isArray(res.data.items)) ? res.data.items : [];
+      const res = await api.get(`/api/reviews/projects?page=${page}&size=${size}`);
+      const payload = (res && res.data) || {};
+      const items = Array.isArray(payload.items) ? payload.items : [];
+      total = Number(payload.total || 0);
       projectItems = items;
       renderProjectList(items);
-
-      const focusId = localStorage.getItem("review_focus_project_id");
-      const hit = focusId ? items.find((p) => String(p.id) === String(focusId)) : null;
-      if (focusId) localStorage.removeItem("review_focus_project_id");
-
       if (!items.length) {
-        projectId = null;
-        setText("#review-page-title", "项目审核中心");
+        const totalPages = Math.max(1, Math.ceil(total / size));
+        if (page > totalPages) {
+          page = totalPages;
+          await loadReviewProjects();
+          return;
+        }
         setText("#review-page-subtitle", "暂无待审核或已审核项目");
-        renderHistory([]);
-        setStatus("暂无可展示项目");
+        setStatus("");
+        updatePagination();
         return;
       }
-      const target = hit || items[0];
-      await selectProject(target.id);
-      setStatus("已加载");
+      setText("#review-page-subtitle", `共 ${total} 个审核项目`);
+      updatePagination();
+      setStatus("");
     } catch (e) {
       setStatus(e.message || "加载失败", true);
     }
-  }
-
-  async function selectProject(pid) {
-    projectId = String(pid || "");
-    if (!projectId) return;
-    localStorage.setItem("activeProjectId", projectId);
-    highlightActiveProject(projectId);
-    const project = projectItems.find((p) => String(p.id) === String(projectId)) || {};
-    setText("#review-page-title", "项目审核中心");
-    setText(
-      "#review-page-subtitle",
-      `${project.title || "未命名项目"} · 当前状态：${mapProjectStatus(project.status)}`
-    );
-
-    const reviewRes = await api.get(`/api/reviews/?project_id=${projectId}&size=50`);
-    const history = (reviewRes && reviewRes.data && reviewRes.data.items) || [];
-    renderHistory(history);
   }
 
   function renderProjectList(items) {
@@ -139,14 +109,11 @@
     }).join("");
 
     list.querySelectorAll(".js-review-project").forEach((node) => {
-      node.addEventListener("click", async function () {
+      node.addEventListener("click", function () {
         const pid = node.getAttribute("data-project-id");
         if (!pid) return;
-        try {
-          await selectProject(pid);
-        } catch (e) {
-          setStatus(e.message || "切换项目失败", true);
-        }
+        localStorage.setItem("activeProjectId", String(pid));
+        window.location.href = `review-workbench.html?id=${encodeURIComponent(String(pid))}`;
       });
     });
 
@@ -161,74 +128,16 @@
     });
   }
 
-  function highlightActiveProject(pid) {
-    const list = document.querySelector("#review-project-list");
-    if (!list) return;
-    list.querySelectorAll(".rsa-project-card").forEach((card) => {
-      card.classList.remove("is-active");
-    });
-    list.querySelectorAll(".js-review-project").forEach((node) => {
-      if (node.getAttribute("data-project-id") === String(pid)) {
-        const card = node.closest(".rsa-project-card");
-        if (card) card.classList.add("is-active");
-      }
-    });
-  }
-
-  function renderHistory(items) {
-    const list = document.querySelector("#review-history-list");
-    if (!list) return;
-    if (!items.length) {
-      list.innerHTML = "<li class='rsa-history-item'><article><p class='rsa-history-item__body'>暂无历史审核记录</p></article></li>";
-      return;
-    }
-    list.innerHTML = items.map((r) => {
-      const name = String(r.reviewer_id || "导演");
-      const time = String(r.created_at || "");
-      const statusText = r.status === "approved" ? "已通过" : r.status === "rejected" ? "驳回" : (r.status || "-");
-      const statusClass = r.status === "approved" ? "rsa-history-item__status--pass" : "rsa-history-item__status--reject";
-      const avatar = String(name).trim().charAt(0) || "导";
-      const comment = (r.comment && String(r.comment).trim()) ? String(r.comment).trim() : "（无备注）";
-      return `
-        <li class="rsa-history-item">
-          <article aria-label="${escapeHtml(name)} 审核记录">
-            <header class="rsa-history-item__head">
-              <span class="rsa-avatar rsa-avatar--green" aria-hidden="true">${escapeHtml(avatar)}</span>
-              <div class="rsa-history-item__meta">
-                <div class="rsa-history-item__row">
-                  <span class="rsa-history-item__name">${escapeHtml(name)}</span>
-                  <time class="rsa-history-item__time">${escapeHtml(time)}</time>
-                  <span class="rsa-history-item__status ${statusClass}">${escapeHtml(statusText)}</span>
-                </div>
-              </div>
-            </header>
-            <p class="rsa-history-item__body">${escapeHtml(comment)}</p>
-          </article>
-        </li>
-      `;
-    }).join("");
-  }
-
-  async function submitReview() {
-    if (!projectId) return;
-    const status = selectedStatus || "approved";
-    const comment = val("#review-comment-text");
-    try {
-      await api.post("/api/reviews/", {
-        project_id: Number(projectId),
-        status,
-        comment,
-      });
-      setStatus(status === "approved" ? "已提交：审核通过" : "已提交：驳回修改");
-      await loadReviewProjects();
-    } catch (e) {
-      setStatus(e.message || "提交失败", true);
-    }
-  }
-
-  function val(selector) {
-    const node = document.querySelector(selector);
-    return node ? node.value.trim() : "";
+  function updatePagination() {
+    const totalPages = Math.max(1, Math.ceil(total / size));
+    const info = document.querySelector("#review-page-info");
+    const prevBtn = document.querySelector("#review-page-prev");
+    const nextBtn = document.querySelector("#review-page-next");
+    const pager = document.querySelector(".rsa-pagination");
+    if (pager) pager.hidden = totalPages <= 1;
+    if (info) info.textContent = `第 ${page} / ${totalPages} 页`;
+    if (prevBtn) prevBtn.disabled = page <= 1;
+    if (nextBtn) nextBtn.disabled = page >= totalPages;
   }
 
   function setText(selector, text) {
@@ -239,7 +148,9 @@
   function setStatus(message, isError) {
     const node = document.querySelector("#review-status");
     if (!node) return;
-    node.textContent = message;
+    const text = String(message || "").trim();
+    node.textContent = text;
+    node.hidden = !text;
     node.style.color = isError ? "#fca5a5" : "#93c5fd";
   }
 

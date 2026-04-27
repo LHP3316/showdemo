@@ -128,6 +128,17 @@ async def list_projects(
     for project in projects:
         # 统计分镜数量
         scene_count = db.query(Scene).filter(Scene.project_id == project.id, Scene.is_deleted == 0).count()
+        first_image_scene = (
+            db.query(Scene)
+            .filter(
+                Scene.project_id == project.id,
+                Scene.is_deleted == 0,
+                Scene.image_url.isnot(None),
+                Scene.image_url != "",
+            )
+            .order_by(Scene.episode_number.asc(), Scene.scene_index.asc(), Scene.id.asc())
+            .first()
+        )
         creator = project.creator
         assignee = project.assignee
         
@@ -148,6 +159,7 @@ async def list_projects(
             "assignee_name": (assignee.display_name or assignee.username) if assignee else None,
             "deadline": project.deadline.isoformat() if project.deadline else None,
             "scene_count": scene_count,
+            "cover_image_url": first_image_scene.image_url if first_image_scene else None,
             "created_at": project.created_at.isoformat() if project.created_at else None,
             "updated_at": project.updated_at.isoformat() if project.updated_at else None,
         })

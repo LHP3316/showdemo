@@ -21,7 +21,7 @@
     bindClick("#btn-go-render", () => goToWorkbench("render"));
     bindClick("#btn-go-review", () => goToWorkbench("review"));
     bindClick("#btn-go-export", () => goToWorkbench("export"));
-    bindClick("#btn-view-blockers", () => goToWorkbench("review"));
+    bindClick("#btn-view-blockers", goResolveBlocker);
     bindClick("#btn-assign-staff", assignStaffForProject);
   }
 
@@ -112,6 +112,18 @@
   function goToScriptWorkbench() {
     // 允许导演进入剧本工位；具体是否可编辑由剧本页按资产状态控制只读
     goToWorkbench("script");
+  }
+
+  function goResolveBlocker() {
+    const id = getProjectId();
+    if (!id) return;
+    localStorage.setItem("activeProjectId", String(id));
+    const isDirector = !!(currentUser && currentUser.role === "director");
+    if (isDirector) {
+      window.location.href = `review-workbench.html?id=${encodeURIComponent(String(id))}`;
+      return;
+    }
+    window.location.href = `storyboard.html?id=${encodeURIComponent(String(id))}`;
   }
 
   function patchProjectHeader(project) {

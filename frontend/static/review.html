@@ -10,63 +10,23 @@
 <body class="review-session-screen">
   <!-- 项目审核中心：由 js/review-page.js 接入后端数据 -->
   <main class="rsa-page" id="review-session-main">
-    <header class="rsa-page-header" aria-label="会话信息与操作">
+    <header class="rsa-page-header" aria-label="页面标题">
       <div class="rsa-page-header__intro">
         <h1 class="rsa-page-title" id="review-page-title">项目审核中心</h1>
         <p class="rsa-page-lede" id="review-page-subtitle">加载中...</p>
       </div>
-      <div class="rsa-page-actions" role="group" aria-label="审核结论操作">
-        <button type="button" class="rsa-btn rsa-btn--pass" id="btn-review-pass" aria-label="审核通过">
-          <svg class="rsa-btn__icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2">
-            <circle cx="12" cy="12" r="9" opacity="0.35"/>
-            <path d="M8 12l2.5 2.5L16 9" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          审核通过
-        </button>
-        <button type="button" class="rsa-btn rsa-btn--reject" id="btn-review-reject" aria-label="驳回修改">
-          <svg class="rsa-btn__icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2">
-            <circle cx="12" cy="12" r="9" opacity="0.35"/>
-            <path d="M9 9l6 6M15 9l-6 6" stroke-linecap="round"/>
-          </svg>
-          驳回修改
-        </button>
-      </div>
     </header>
 
-    <div class="rsa-layout">
-      <section class="rsa-preview" aria-labelledby="rsa-preview-heading">
-        <h2 class="rsa-preview__title" id="rsa-preview-heading">审核项目列表</h2>
-        <ul class="rsa-project-grid" id="review-project-list" role="list"></ul>
-      </section>
-
-      <aside class="rsa-audit" aria-labelledby="rsa-audit-heading">
-        <h2 class="rsa-audit__title" id="rsa-audit-heading">审核记录</h2>
-        <p id="review-status" class="rsa-page-lede" style="margin: 10px 0 0; opacity: .85;" aria-live="polite"></p>
-
-        <form class="rsa-form" id="review-comment-form" aria-label="添加审核意见">
-          <fieldset class="rsa-fieldset">
-            <legend class="rsa-form__legend">添加审核意见</legend>
-            <label class="visually-hidden" for="review-comment-text">审核意见正文</label>
-            <textarea
-              id="review-comment-text"
-              class="rsa-textarea"
-              name="comment"
-              rows="5"
-              placeholder="填写项目审核意见（可选）"
-            ></textarea>
-            <div class="rsa-form__actions">
-              <button type="button" class="rsa-btn rsa-btn--ghost" id="btn-review-cancel">取消</button>
-              <button type="submit" class="rsa-btn rsa-btn--submit" id="btn-submit-review">提交意见</button>
-            </div>
-          </fieldset>
-        </form>
-
-        <section class="rsa-history" aria-labelledby="rsa-history-heading">
-          <h3 class="rsa-history__title" id="rsa-history-heading">当前项目历史审核</h3>
-          <ol class="rsa-history-list" id="review-history-list" role="list"></ol>
-        </section>
-      </aside>
-    </div>
+    <section class="rsa-preview" aria-labelledby="rsa-preview-heading">
+      <h2 class="rsa-preview__title" id="rsa-preview-heading">审核项目列表</h2>
+      <p id="review-status" class="rsa-page-lede" style="margin: 0 0 10px; opacity: .85;" aria-live="polite"></p>
+      <ul class="rsa-project-grid" id="review-project-list" role="list"></ul>
+      <div class="rsa-pagination" aria-label="分页">
+        <button id="review-page-prev" class="rsa-page-btn" type="button">上一页</button>
+        <span id="review-page-info" class="rsa-page-info">第 1 / 1 页</span>
+        <button id="review-page-next" class="rsa-page-btn" type="button">下一页</button>
+      </div>
+    </section>
   </main>
 
   <script src="js/api.js"></script>
