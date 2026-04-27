@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>审核工位 - AI短剧协作平台</title>
+  <link rel="stylesheet" href="css/font.css">
+  <link rel="stylesheet" href="css/storyboard-modern.css">
+  <link rel="stylesheet" href="css/review-workbench.css">
+</head>
+<body class="storyboard-screen review-workbench-screen">
+  <main class="sb-page" aria-label="审核工位">
+    <section class="sb-localbar" aria-label="审核工位头部">
+      <div class="sb-localbar__left">
+        <button id="sb-back" class="sb-back" type="button" aria-label="返回">返回</button>
+        <h1 id="review-workbench-title" class="sb-title">审核工位</h1>
+        <p id="review-workbench-subtitle" class="sb-badge">项目加载中...</p>
+      </div>
+      <div class="sb-localbar__right" aria-label="审核快捷操作"></div>
+    </section>
+
+    <section class="sb-layout" aria-label="审核工位布局">
+      <aside class="sb-sidebar" aria-label="分镜列表">
+        <header class="sb-panel-head">
+          <h2 class="sb-panel-title sb-panel-title--sidebar">分镜列表</h2>
+          <span id="sb-scene-count" class="sb-count">0场</span>
+        </header>
+        <div class="sb-list" id="sb-scene-list" role="list"></div>
+      </aside>
+
+      <section class="sb-canvas" aria-label="分镜预览">
+        <div class="sb-media-tabs" role="tablist" aria-label="媒体类型切换">
+          <button id="tab-image" class="sb-media-tab is-active" type="button" role="tab" aria-selected="true">图片</button>
+          <button id="tab-video" class="sb-media-tab" type="button" role="tab" aria-selected="false">视频</button>
+        </div>
+        <div class="sb-preview">
+          <img id="sb-preview-image" class="sb-preview-image" src="tu.png" alt="分镜预览图">
+          <video id="sb-preview-video" class="sb-preview-video" controls playsinline hidden></video>
+        </div>
+        <div id="sb-preview-thumbs" class="sb-preview-thumbs" aria-label="分镜图片缩略图" hidden></div>
+        <div class="sb-timeline" aria-label="分镜信息">
+          <span class="sb-timeline__tag" id="sb-active-tag">Scene -- / 第--集</span>
+          <p class="sb-timeline__desc" id="sb-active-desc">请选择分镜</p>
+          <span class="sb-timeline__spacer"></span>
+          <button class="sb-mini" id="sb-prev" type="button" aria-label="上一场">‹</button>
+          <button class="sb-mini" id="sb-next" type="button" aria-label="下一场">›</button>
+        </div>
+        <div id="review-workbench-status" class="sb-status" aria-live="polite"></div>
+      </section>
+
+      <aside class="sb-editor" aria-label="审核记录">
+        <header class="sb-panel-head sb-panel-head--editor">
+          <h2 class="sb-panel-title sb-panel-title--editor">审核记录</h2>
+        </header>
+        <section class="rw-panel">
+          <div class="rw-field">
+            <label class="sb-label" for="review-comment-text">添加审核意见（可选）</label>
+            <textarea id="review-comment-text" class="sb-textarea" placeholder="请输入项目级审核意见..."></textarea>
+          </div>
+          <div class="rw-actions">
+            <button id="btn-review-pass" class="sb-btn sb-btn--green" type="button">审核通过</button>
+            <button id="btn-review-reject" class="sb-btn sb-btn--red" type="button">驳回审核</button>
+          </div>
+          <div class="rw-history">
+            <h3 class="rw-history__title">当前项目历史审核</h3>
+            <ul id="review-history-list" class="rw-history__list" role="list"></ul>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/review-workbench-page.js"></script>
+</body>
+</html>

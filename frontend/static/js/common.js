@@ -12,7 +12,7 @@
     script: "script.html",
     storyboard: "storyboard.html",
     render: "render.html",
-    review: "review.html",
+    review: "review-workbench.html",
     export: "export.html",
   };
 
@@ -418,7 +418,7 @@
     }
 
     // 基础权限守卫：工作人员不允许进入审核中心页
-    if (!isDirector && pageName === "review.html") {
+    if (!isDirector && (pageName === "review.html" || pageName === "review-workbench.html")) {
       routeTo("workspace");
     }
   }

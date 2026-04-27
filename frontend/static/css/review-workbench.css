@@ -1,0 +1,161 @@
+.review-workbench-screen .sb-btn--red {
+  border: 0;
+  color: #ffffff;
+  background: linear-gradient(90deg, #ef4444, #b91c1c);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.24);
+}
+
+.review-workbench-screen .sb-layout {
+  grid-template-columns: 294px minmax(0, 1fr) 420px;
+}
+
+.review-workbench-screen .sb-panel-head--editor {
+  min-height: auto;
+  padding: 8px 16px 4px;
+  gap: 2px;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.rw-panel {
+  padding: 4px 16px 12px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.rw-field {
+  display: grid;
+  gap: 8px;
+}
+
+.rw-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.rw-history {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 4px;
+  min-height: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.rw-history__title {
+  margin: 0;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.review-workbench-screen #review-comment-text {
+  min-height: 280px;
+}
+
+.rw-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  min-height: 220px;
+  max-height: 380px;
+  overflow: auto;
+  align-content: start;
+}
+
+.rw-history__list.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rw-history__item {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(8, 11, 22, 0.88);
+  padding: 10px 12px;
+}
+
+.rw-history__meta {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.rw-history__icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 1px;
+  flex: 0 0 auto;
+}
+
+.rw-history__icon--approved {
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  background: rgba(20, 83, 45, 0.35);
+}
+
+.rw-history__icon--rejected {
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: rgba(127, 29, 29, 0.35);
+}
+
+.rw-history__name {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rw-history__time {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.rw-history__status {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rw-history__status--approved {
+  color: #86efac;
+}
+
+.rw-history__status--rejected {
+  color: #fca5a5;
+}
+
+.rw-history__comment {
+  margin: 0;
+  color: #d1d5db;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.rw-history__empty {
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 0;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .review-workbench-screen .sb-layout {
+    grid-template-columns: 1fr;
+  }
+}

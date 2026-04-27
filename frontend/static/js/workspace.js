@@ -182,7 +182,7 @@
         const projectId = el.getAttribute("data-id");
         if (!projectId) return;
         localStorage.setItem("review_focus_project_id", String(projectId));
-        window.location.href = "review.html";
+        window.location.href = "review-workbench.html";
       });
     });
   }
