@@ -446,8 +446,7 @@
   function getProjectCoverUrl(project) {
     const raw = project && project.cover_image_url ? String(project.cover_image_url).trim() : "";
     if (!raw) return "";
-    if (raw.startsWith("/uploads/")) return `http://localhost:8001${raw}`;
-    return raw;
+    return raw.replaceAll("\\", "/");
   }
 
   function setText(selector, text) {

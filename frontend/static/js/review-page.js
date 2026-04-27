@@ -7,7 +7,6 @@
  * 历史列表不再使用 #review-history-body 表格，请改为请求后渲染 .rsa-history-list。
  */
 (function () {
-  const BACKEND_MEDIA_BASE = "http://localhost:8001";
   let projectItems = [];
   let page = 1;
   let size = 12;
@@ -179,8 +178,7 @@
   function resolveMediaUrl(url) {
     const text = String(url || "").trim();
     if (!text) return "";
-    if (text.startsWith("/uploads/")) return `${BACKEND_MEDIA_BASE}${text}`;
-    return text;
+    return text.replaceAll("\\", "/");
   }
 })();
 

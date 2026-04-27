@@ -21,6 +21,7 @@ from app.schemas import (
     ApiResponse
 )
 from app.services.ai_service import ai_service
+from app.utils.media_urls import to_public_media_url, normalize_media_url_list
 
 router = APIRouter()
 
@@ -159,7 +160,7 @@ async def list_projects(
             "assignee_name": (assignee.display_name or assignee.username) if assignee else None,
             "deadline": project.deadline.isoformat() if project.deadline else None,
             "scene_count": scene_count,
-            "cover_image_url": first_image_scene.image_url if first_image_scene else None,
+            "cover_image_url": to_public_media_url(first_image_scene.image_url) if first_image_scene else None,
             "created_at": project.created_at.isoformat() if project.created_at else None,
             "updated_at": project.updated_at.isoformat() if project.updated_at else None,
         })
@@ -270,8 +271,9 @@ async def get_project(
             "camera_angle": scene.camera_angle,
             "emotion": scene.emotion,
             "prompt": scene.prompt,
-            "image_url": scene.image_url,
-            "video_url": scene.video_url,
+            "image_url": to_public_media_url(scene.image_url),
+            "image_urls": normalize_media_url_list(scene.image_urls),
+            "video_url": to_public_media_url(scene.video_url),
             "duration": scene.duration,
             "status": scene.status,
             "created_at": scene.created_at.isoformat() if scene.created_at else None,

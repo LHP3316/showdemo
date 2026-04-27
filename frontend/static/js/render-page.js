@@ -2,7 +2,6 @@
  * AI 生成队列页（render.html）
  */
 (function () {
-  const BACKEND_MEDIA_BASE = "http://localhost:8001";
   const EMPTY_POSTER = "/static/tu.png";
   let projectId = null;
   let scenes = [];
@@ -393,23 +392,7 @@
   function resolveMediaUrl(url) {
     const text = String(url || "").trim();
     if (!text) return "";
-    // 标准后端相对路径
-    if (text.startsWith("/uploads/")) return `${BACKEND_MEDIA_BASE}${text}`;
-    // 无前导斜杠的 uploads 路径
-    if (text.startsWith("uploads/")) return `${BACKEND_MEDIA_BASE}/${text}`;
-    // Windows 风格分隔符
-    if (text.startsWith("\\uploads\\")) {
-      return `${BACKEND_MEDIA_BASE}${text.replaceAll("\\", "/")}`;
-    }
-    // 绝对本地路径里包含 uploads（例如 D:\Project\...\uploads\xxx.png）
-    const normalized = text.replaceAll("\\", "/");
-    const marker = "/uploads/";
-    const idx = normalized.toLowerCase().indexOf(marker);
-    if (idx >= 0) {
-      const rel = normalized.slice(idx);
-      return `${BACKEND_MEDIA_BASE}${rel}`;
-    }
-    return text;
+    return text.replaceAll("\\", "/");
   }
 
   function pickVideoPosterUrl(scene) {

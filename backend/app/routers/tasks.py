@@ -13,6 +13,7 @@ from app.models import TaskQueue, Scene
 from app.schemas import TaskCreate, TaskResponse, ApiResponse
 from app.deps import get_current_user
 from app.services.ai_service import AIService
+from app.utils.media_urls import to_public_media_url
 
 router = APIRouter(prefix="/tasks", tags=["任务队列"])
 
@@ -140,7 +141,7 @@ async def get_tasks(
                     "task_type": task.task_type,
                     "status": task.status,
                     "progress": task.progress,
-                    "result_url": task.result_url,
+                    "result_url": to_public_media_url(task.result_url),
                     "error_message": task.error_message,
                     "created_at": task.created_at.isoformat() if task.created_at else None,
                     "updated_at": task.updated_at.isoformat() if task.updated_at else None
@@ -173,7 +174,7 @@ async def get_task(
             "task_type": task.task_type,
             "status": task.status,
             "progress": task.progress,
-            "result_url": task.result_url,
+            "result_url": to_public_media_url(task.result_url),
             "error_message": task.error_message,
             "created_at": task.created_at.isoformat() if task.created_at else None,
             "updated_at": task.updated_at.isoformat() if task.updated_at else None

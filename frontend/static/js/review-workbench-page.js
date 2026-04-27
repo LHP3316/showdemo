@@ -2,7 +2,6 @@
  * Review workbench page runtime
  */
 (function () {
-  const BACKEND_MEDIA_BASE = "http://localhost:8001";
   let projectId = null;
   let scenes = [];
   let activeSceneId = null;
@@ -341,8 +340,7 @@
   function resolveMediaUrl(url) {
     const text = String(url || "").trim();
     if (!text) return "";
-    if (text.startsWith("/uploads/")) return `${BACKEND_MEDIA_BASE}${text}`;
-    return text;
+    return text.replaceAll("\\", "/");
   }
 
   function pad2(n) {

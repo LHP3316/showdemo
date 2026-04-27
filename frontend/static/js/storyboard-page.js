@@ -3,7 +3,6 @@
  */
 (function () {
   const EMPTY_PREVIEW_CANDIDATES = ["tu.png", "/static/tu.png"];
-  const BACKEND_MEDIA_BASE = "http://localhost:8001";
   const FIXED_IMAGE_MODEL = "gpt-image-2";
   const FIXED_VIDEO_MODEL = "wan2.6-t2v";
   let emptyPreviewImageUrl = "tu.png";
@@ -872,8 +871,7 @@
     ) {
       return "";
     }
-    if (text.startsWith("/uploads/")) return `${BACKEND_MEDIA_BASE}${text}`;
-    return text;
+    return text.replaceAll("\\", "/");
   }
 
   function pad2(n) {

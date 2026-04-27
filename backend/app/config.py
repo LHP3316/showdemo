@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     SHOWDEMO_LLM_API_KEY: str = ""
     SHOWDEMO_LLM_MODEL: str = ""
     SHOWDEMO_LLM_TIMEOUT_SEC: int = 120
+    # 对外可访问的媒体域名（用于将 /uploads/... 转成完整 URL）
+    MEDIA_PUBLIC_BASE_URL: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

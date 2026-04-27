@@ -12,6 +12,7 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models import Project, Review, ReviewComment, Scene, User
 from app.schemas import ReviewCreate, ReviewResponse, ApiResponse
+from app.utils.media_urls import to_public_media_url
 
 router = APIRouter()
 
@@ -220,8 +221,8 @@ async def get_review_projects(
             "latest_review_at": latest_review.created_at.isoformat() if latest_review and latest_review.created_at else None,
             "latest_reviewer": reviewer_name,
             "latest_comment": latest_review.comment if latest_review else None,
-            "preview_image_url": first_image_scene.image_url if first_image_scene else None,
-            "preview_video_url": first_video_scene.video_url if first_video_scene else None,
+            "preview_image_url": to_public_media_url(first_image_scene.image_url) if first_image_scene else None,
+            "preview_video_url": to_public_media_url(first_video_scene.video_url) if first_video_scene else None,
         })
 
     return ApiResponse(

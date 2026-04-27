@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models import Project, Scene
 from app.schemas import ApiResponse
 from app.deps import get_current_user
+from app.utils.media_urls import to_public_media_url
 
 router = APIRouter(prefix="/export", tags=["导出"])
 
@@ -48,8 +49,8 @@ async def get_project_assets(
             "episode_number": scene.episode_number,
             "scene_index": scene.scene_index,
             "scene_description": scene.scene_description,
-            "image_url": scene.image_url,
-            "video_url": scene.video_url,
+            "image_url": to_public_media_url(scene.image_url),
+            "video_url": to_public_media_url(scene.video_url),
             "status": scene.status
         }
         assets.append(asset)
@@ -113,10 +114,10 @@ async def package_export(
         }
         
         if include_images and scene.image_url:
-            item["image_url"] = scene.image_url
+            item["image_url"] = to_public_media_url(scene.image_url)
         
         if include_videos and scene.video_url:
-            item["video_url"] = scene.video_url
+            item["video_url"] = to_public_media_url(scene.video_url)
         
         export_list.append(item)
     

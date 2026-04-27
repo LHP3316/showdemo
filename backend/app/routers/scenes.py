@@ -14,6 +14,7 @@ from app.deps import get_current_user
 from app.models import Project, Scene, User
 from app.schemas import SceneCreate, SceneResponse, SceneUpdate, ApiResponse
 from app.services.geeknow_service import geeknow_service
+from app.utils.media_urls import to_public_media_url, normalize_media_url_list
 
 router = APIRouter()
 
@@ -65,9 +66,9 @@ async def list_scenes(
                 "video_prompt": scene.video_prompt,
                 "image_config": scene.image_config,
                 "video_config": scene.video_config,
-                "image_url": scene.image_url,
-                "image_urls": scene.image_urls,
-                "video_url": scene.video_url,
+                "image_url": to_public_media_url(scene.image_url),
+                "image_urls": normalize_media_url_list(scene.image_urls),
+                "video_url": to_public_media_url(scene.video_url),
                 "duration": scene.duration,
                 "status": scene.status,
                 "created_at": scene.created_at.isoformat() if scene.created_at else None,
@@ -105,9 +106,9 @@ async def get_scene(
             "video_prompt": scene.video_prompt,
             "image_config": scene.image_config,
             "video_config": scene.video_config,
-            "image_url": scene.image_url,
-            "image_urls": scene.image_urls,
-            "video_url": scene.video_url,
+            "image_url": to_public_media_url(scene.image_url),
+            "image_urls": normalize_media_url_list(scene.image_urls),
+            "video_url": to_public_media_url(scene.video_url),
             "duration": scene.duration,
             "status": scene.status,
             "created_at": scene.created_at.isoformat() if scene.created_at else None,
@@ -233,8 +234,8 @@ async def generate_image(
             message="图片生成成功",
             data={
                 "scene_id": scene.id,
-                "image_url": image_url,
-                "image_urls": image_urls,
+                "image_url": to_public_media_url(image_url),
+                "image_urls": normalize_media_url_list(image_urls),
                 "status": scene.status
             }
         )
@@ -289,9 +290,9 @@ async def generate_video(
             message="视频生成成功",
             data={
                 "scene_id": scene.id,
-                "video_url": video_url,
-                "image_url": scene.image_url,
-                "image_urls": scene.image_urls,
+                "video_url": to_public_media_url(video_url),
+                "image_url": to_public_media_url(scene.image_url),
+                "image_urls": normalize_media_url_list(scene.image_urls),
                 "status": scene.status
             }
         )
