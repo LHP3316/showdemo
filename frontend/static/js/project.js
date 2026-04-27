@@ -93,6 +93,10 @@
     }
     const id = getProjectId();
     const base = `${route}.html`;
+    if (route === "review") {
+      window.location.href = base;
+      return;
+    }
     window.location.href = id ? `${base}?id=${id}` : base;
   }
 
@@ -368,7 +372,7 @@
 
     // 审核中心：导演可见；工作人员仅查看状态（不开放进入审核中心）
     const canEnterReview = isDirector;
-    setBtnState("#btn-go-review", { hidden: !canEnterReview, disabled: project.status !== "review", title: project.status === "review" ? "" : "项目未处于待审核状态" });
+    setBtnState("#btn-go-review", { hidden: !canEnterReview, disabled: false, title: "" });
 
     // 导出交付：导演可见，且需 approved
     const canEnterExport = isDirector;

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Project, Review, ReviewComment, User
+from app.models import Project, Review, ReviewComment, Scene, User
 from app.schemas import ReviewCreate, ReviewResponse, ApiResponse
 
 router = APIRouter()
@@ -150,5 +150,87 @@ async def get_pending_reviews(
                 }
                 for p in projects
             ]
+        }
+    )
+
+
+@router.get("/projects", response_model=ApiResponse, summary="获取审核中心项目列表")
+async def get_review_projects(
+    page: int = Query(1, ge=1, description="页码"),
+    size: int = Query(20, ge=1, le=100, description="每页数量"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    获取审核中心项目列表（仅导演）
+
+    范围：待审核(review) + 已审核(approved/rejected) 项目
+    """
+    if current_user.role != "director":
+        raise HTTPException(status_code=403, detail="仅导演可查看")
+
+    query = db.query(Project).filter(Project.status.in_(["review", "approved", "rejected"]))
+    total = query.count()
+    projects = query.order_by(Project.updated_at.desc()).offset((page - 1) * size).limit(size).all()
+
+    items = []
+    for p in projects:
+        first_image_scene = (
+            db.query(Scene)
+            .filter(
+                Scene.project_id == p.id,
+                Scene.is_deleted == 0,
+                Scene.image_url.isnot(None),
+                Scene.image_url != "",
+            )
+            .order_by(Scene.episode_number.asc(), Scene.scene_index.asc(), Scene.id.asc())
+            .first()
+        )
+        first_video_scene = (
+            db.query(Scene)
+            .filter(
+                Scene.project_id == p.id,
+                Scene.is_deleted == 0,
+                Scene.video_url.isnot(None),
+                Scene.video_url != "",
+            )
+            .order_by(Scene.episode_number.asc(), Scene.scene_index.asc(), Scene.id.asc())
+            .first()
+        )
+
+        latest_review = (
+            db.query(Review)
+            .filter(Review.project_id == p.id)
+            .order_by(Review.created_at.desc())
+            .first()
+        )
+        reviewer_name = None
+        if latest_review and latest_review.reviewer_id:
+            reviewer = db.query(User).filter(User.id == latest_review.reviewer_id).first()
+            if reviewer:
+                reviewer_name = reviewer.display_name or reviewer.username
+
+        items.append({
+            "id": p.id,
+            "title": p.title,
+            "status": p.status,
+            "assigned_to": p.assigned_to,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            "latest_review_status": latest_review.status if latest_review else None,
+            "latest_review_at": latest_review.created_at.isoformat() if latest_review and latest_review.created_at else None,
+            "latest_reviewer": reviewer_name,
+            "latest_comment": latest_review.comment if latest_review else None,
+            "preview_image_url": first_image_scene.image_url if first_image_scene else None,
+            "preview_video_url": first_video_scene.video_url if first_video_scene else None,
+        })
+
+    return ApiResponse(
+        success=True,
+        message="获取成功",
+        data={
+            "total": total,
+            "page": page,
+            "size": size,
+            "items": items
         }
     )

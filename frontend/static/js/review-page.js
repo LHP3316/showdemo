@@ -7,7 +7,9 @@
  * 历史列表不再使用 #review-history-body 表格，请改为请求后渲染 .rsa-history-list。
  */
 (function () {
+  const BACKEND_MEDIA_BASE = "http://localhost:8001";
   let projectId = null;
+  let projectItems = [];
   let selectedStatus = "approved";
 
   document.addEventListener("DOMContentLoaded", async function () {
@@ -15,9 +17,8 @@
     const ok = await CommonApp.ensureSession(true);
     if (!ok) return;
 
-    projectId = await ensureProjectId();
     bindActions();
-    await loadData();
+    await loadReviewProjects();
   });
 
   function bindActions() {
@@ -55,52 +56,127 @@
     }
   }
 
-  async function ensureProjectId() {
-    const fromQuery = new URLSearchParams(window.location.search).get("id");
-    if (fromQuery) {
-      localStorage.setItem("activeProjectId", fromQuery);
-      return fromQuery;
-    }
-    const fromCache = localStorage.getItem("activeProjectId");
-    if (fromCache) return fromCache;
-
-    const res = await api.get("/projects?size=1");
-    const first = res && res.data && res.data.items ? res.data.items[0] : null;
-    if (first && first.id) {
-      localStorage.setItem("activeProjectId", String(first.id));
-      window.history.replaceState({}, "", `review.html?id=${first.id}`);
-      return String(first.id);
-    }
-    return null;
-  }
-
-  async function loadData() {
-    if (!projectId) {
-      setStatus("No project available", true);
-      return;
-    }
+  async function loadReviewProjects() {
     try {
-      const [projectRes, reviewRes] = await Promise.all([
-        api.get(`/projects/${projectId}`),
-        api.get(`/api/reviews/?project_id=${projectId}&size=50`),
-      ]);
-      const p = (projectRes && projectRes.data) || {};
-      const history = (reviewRes && reviewRes.data && reviewRes.data.items) || [];
+      const res = await api.get("/api/reviews/projects?size=100");
+      const items = (res && res.data && Array.isArray(res.data.items)) ? res.data.items : [];
+      projectItems = items;
+      renderProjectList(items);
 
-      setText("#review-page-title", "分镜审核会话");
-      setText(
-        "#review-page-subtitle",
-        `${p.title || "未命名项目"} · 当前状态：${mapProjectStatus(p.status)}`
-      );
-      renderHistory(history);
+      const focusId = localStorage.getItem("review_focus_project_id");
+      const hit = focusId ? items.find((p) => String(p.id) === String(focusId)) : null;
+      if (focusId) localStorage.removeItem("review_focus_project_id");
+
+      if (!items.length) {
+        projectId = null;
+        setText("#review-page-title", "项目审核中心");
+        setText("#review-page-subtitle", "暂无待审核或已审核项目");
+        renderHistory([]);
+        setStatus("暂无可展示项目");
+        return;
+      }
+      const target = hit || items[0];
+      await selectProject(target.id);
       setStatus("已加载");
     } catch (e) {
       setStatus(e.message || "加载失败", true);
     }
   }
 
+  async function selectProject(pid) {
+    projectId = String(pid || "");
+    if (!projectId) return;
+    localStorage.setItem("activeProjectId", projectId);
+    highlightActiveProject(projectId);
+    const project = projectItems.find((p) => String(p.id) === String(projectId)) || {};
+    setText("#review-page-title", "项目审核中心");
+    setText(
+      "#review-page-subtitle",
+      `${project.title || "未命名项目"} · 当前状态：${mapProjectStatus(project.status)}`
+    );
+
+    const reviewRes = await api.get(`/api/reviews/?project_id=${projectId}&size=50`);
+    const history = (reviewRes && reviewRes.data && reviewRes.data.items) || [];
+    renderHistory(history);
+  }
+
+  function renderProjectList(items) {
+    const list = document.querySelector("#review-project-list");
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = "<li class='rsa-project-card'><article class='rsa-project-card__inner'><div class='rsa-project-card__body'><p class='rsa-project-card__meta'>暂无项目</p></div></article></li>";
+      return;
+    }
+    list.innerHTML = items.map((p) => {
+      const statusText = mapProjectStatus(p.status);
+      const badgeClass = p.status === "approved"
+        ? "rsa-project-card__badge--approved"
+        : (p.status === "rejected" ? "rsa-project-card__badge--rejected" : "rsa-project-card__badge--pending");
+      const reviewer = p.latest_reviewer || "—";
+      const time = p.latest_review_at || p.updated_at || "";
+      const imageUrl = resolveMediaUrl(p.preview_image_url);
+      const videoUrl = resolveMediaUrl(p.preview_video_url);
+      const thumbNode = imageUrl
+        ? `<img class="rsa-project-thumb__img" src="${escapeAttr(imageUrl)}" alt="${escapeAttr(p.title || `项目#${p.id}`)} 预览图" loading="lazy" />`
+        : (videoUrl
+          ? `<video class="rsa-project-thumb__video" src="${escapeAttr(videoUrl)}" preload="metadata" muted playsinline></video>`
+          : `<img class="rsa-project-thumb__img" src="tu.png" alt="默认预览图" loading="lazy" />`);
+      return `
+        <li class="rsa-project-card">
+          <article class="rsa-project-card__inner js-review-project" data-project-id="${escapeHtml(String(p.id))}">
+            <div class="rsa-project-card__media">
+              <span class="rsa-project-thumb" aria-hidden="true">${thumbNode}</span>
+              <span class="rsa-project-card__badge ${badgeClass}">${escapeHtml(statusText)}</span>
+            </div>
+            <div class="rsa-project-card__body">
+              <h3 class="rsa-project-card__title">${escapeHtml(p.title || `项目#${p.id}`)}</h3>
+              <p class="rsa-project-card__meta">最近审核人：${escapeHtml(String(reviewer))}</p>
+              <p class="rsa-project-card__meta">${escapeHtml(String(time))}</p>
+            </div>
+          </article>
+        </li>
+      `;
+    }).join("");
+
+    list.querySelectorAll(".js-review-project").forEach((node) => {
+      node.addEventListener("click", async function () {
+        const pid = node.getAttribute("data-project-id");
+        if (!pid) return;
+        try {
+          await selectProject(pid);
+        } catch (e) {
+          setStatus(e.message || "切换项目失败", true);
+        }
+      });
+    });
+
+    // 视频缩略图显示首帧（无需用户播放）
+    list.querySelectorAll(".rsa-project-thumb__video").forEach((video) => {
+      video.addEventListener("loadedmetadata", function () {
+        try {
+          video.currentTime = 0.01;
+          video.pause();
+        } catch {}
+      }, { once: true });
+    });
+  }
+
+  function highlightActiveProject(pid) {
+    const list = document.querySelector("#review-project-list");
+    if (!list) return;
+    list.querySelectorAll(".rsa-project-card").forEach((card) => {
+      card.classList.remove("is-active");
+    });
+    list.querySelectorAll(".js-review-project").forEach((node) => {
+      if (node.getAttribute("data-project-id") === String(pid)) {
+        const card = node.closest(".rsa-project-card");
+        if (card) card.classList.add("is-active");
+      }
+    });
+  }
+
   function renderHistory(items) {
-    const list = document.querySelector(".rsa-history-list");
+    const list = document.querySelector("#review-history-list");
     if (!list) return;
     if (!items.length) {
       list.innerHTML = "<li class='rsa-history-item'><article><p class='rsa-history-item__body'>暂无历史审核记录</p></article></li>";
@@ -144,7 +220,7 @@
         comment,
       });
       setStatus(status === "approved" ? "已提交：审核通过" : "已提交：驳回修改");
-      await loadData();
+      await loadReviewProjects();
     } catch (e) {
       setStatus(e.message || "提交失败", true);
     }
@@ -183,6 +259,17 @@
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;");
+  }
+
+  function escapeAttr(text) {
+    return escapeHtml(String(text || "")).replaceAll("\"", "&quot;");
+  }
+
+  function resolveMediaUrl(url) {
+    const text = String(url || "").trim();
+    if (!text) return "";
+    if (text.startsWith("/uploads/")) return `${BACKEND_MEDIA_BASE}${text}`;
+    return text;
   }
 })();
 

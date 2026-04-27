@@ -139,7 +139,7 @@
         <a class="func-btn" href="script.html?id=${projectId}">Script</a>
         <a class="func-btn" href="storyboard.html?id=${projectId}">Storyboard</a>
         <a class="func-btn" href="render.html?id=${projectId}">Render</a>
-        <a class="func-btn" href="review.html?id=${projectId}">Review</a>
+        <a class="func-btn" href="review.html">Review</a>
       </div>
     `);
     setStatus("Project synced");

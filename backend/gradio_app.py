@@ -258,7 +258,7 @@ def build_ui():
         scenes_state = gr.State([])
 
         with gr.Row():
-            backend_url = gr.Textbox(label="后端地址", value=os.getenv("BACKEND_URL", "http://127.0.0.1:8000"), scale=2)
+            backend_url = gr.Textbox(label="后端地址", value=os.getenv("BACKEND_URL", "http://127.0.0.1:8001"), scale=2)
             login_status = gr.Textbox(label="状态", value="请先登录", interactive=False, scale=3)
 
         with gr.Row():

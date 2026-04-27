@@ -2,7 +2,7 @@
  * AI 生成队列页（render.html）
  */
 (function () {
-  const BACKEND_MEDIA_BASE = "http://localhost:8000";
+  const BACKEND_MEDIA_BASE = "http://localhost:8001";
   const EMPTY_POSTER = "/static/tu.png";
   let projectId = null;
   let scenes = [];

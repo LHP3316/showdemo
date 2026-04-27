@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>分镜审核会话 - AI短剧协作平台</title>
+  <title>项目审核中心 - AI短剧协作平台</title>
   <link rel="stylesheet" href="css/font.css">
   <link rel="stylesheet" href="css/review-session-modern.css">
 </head>
 <body class="review-session-screen">
-  <!-- 审核会话页：由 js/review-page.js 接入后端数据 -->
+  <!-- 项目审核中心：由 js/review-page.js 接入后端数据 -->
   <main class="rsa-page" id="review-session-main">
     <header class="rsa-page-header" aria-label="会话信息与操作">
       <div class="rsa-page-header__intro">
-        <h1 class="rsa-page-title" id="review-page-title">分镜审核会话</h1>
-        <p class="rsa-page-lede" id="review-page-subtitle">都市情缘 · 她的选择 · 第3集 · 由 王制片 发起</p>
+        <h1 class="rsa-page-title" id="review-page-title">项目审核中心</h1>
+        <p class="rsa-page-lede" id="review-page-subtitle">加载中...</p>
       </div>
       <div class="rsa-page-actions" role="group" aria-label="审核结论操作">
         <button type="button" class="rsa-btn rsa-btn--pass" id="btn-review-pass" aria-label="审核通过">
@@ -35,45 +35,8 @@
 
     <div class="rsa-layout">
       <section class="rsa-preview" aria-labelledby="rsa-preview-heading">
-        <h2 class="rsa-preview__title" id="rsa-preview-heading">分镜预览</h2>
-        <ul class="rsa-scene-grid" role="list">
-          <li class="rsa-scene-item">
-            <article class="rsa-scene-card" aria-labelledby="rsa-scene-01-label">
-              <div class="rsa-scene-card__thumb rsa-scene-card__thumb--s1" role="img" aria-label="Scene 01 预览画面：夜景水边双人"></div>
-              <footer class="rsa-scene-card__foot">
-                <h3 class="rsa-scene-card__name" id="rsa-scene-01-label">Scene 01</h3>
-                <span class="rsa-tag rsa-tag--pass">通过</span>
-              </footer>
-            </article>
-          </li>
-          <li class="rsa-scene-item">
-            <article class="rsa-scene-card" aria-labelledby="rsa-scene-02-label">
-              <div class="rsa-scene-card__thumb rsa-scene-card__thumb--s2" role="img" aria-label="Scene 02 预览画面：室内百叶窗光影"></div>
-              <footer class="rsa-scene-card__foot">
-                <h3 class="rsa-scene-card__name" id="rsa-scene-02-label">Scene 02</h3>
-                <span class="rsa-tag rsa-tag--pass">通过</span>
-              </footer>
-            </article>
-          </li>
-          <li class="rsa-scene-item">
-            <article class="rsa-scene-card rsa-scene-card--revise" aria-labelledby="rsa-scene-03-label">
-              <div class="rsa-scene-card__thumb rsa-scene-card__thumb--s3" role="img" aria-label="Scene 03 预览画面：巷道与车辆"></div>
-              <footer class="rsa-scene-card__foot">
-                <h3 class="rsa-scene-card__name" id="rsa-scene-03-label">Scene 03</h3>
-                <span class="rsa-tag rsa-tag--revise">待修改</span>
-              </footer>
-            </article>
-          </li>
-          <li class="rsa-scene-item">
-            <article class="rsa-scene-card" aria-labelledby="rsa-scene-04-label">
-              <div class="rsa-scene-card__thumb rsa-scene-card__thumb--s4" role="img" aria-label="Scene 04 预览画面：烛光暗室"></div>
-              <footer class="rsa-scene-card__foot">
-                <h3 class="rsa-scene-card__name" id="rsa-scene-04-label">Scene 04</h3>
-                <span class="rsa-tag rsa-tag--pending">待审核</span>
-              </footer>
-            </article>
-          </li>
-        </ul>
+        <h2 class="rsa-preview__title" id="rsa-preview-heading">审核项目列表</h2>
+        <ul class="rsa-project-grid" id="review-project-list" role="list"></ul>
       </section>
 
       <aside class="rsa-audit" aria-labelledby="rsa-audit-heading">
@@ -89,8 +52,8 @@
               class="rsa-textarea"
               name="comment"
               rows="5"
-              placeholder="Scene 03 光线角度需要调整，人物与背景融合感不够，建议重新渲染…"
-            >Scene 03 光线角度需要调整，人物与背景融合感不够，建议重新渲染…</textarea>
+              placeholder="填写项目审核意见（可选）"
+            ></textarea>
             <div class="rsa-form__actions">
               <button type="button" class="rsa-btn rsa-btn--ghost" id="btn-review-cancel">取消</button>
               <button type="submit" class="rsa-btn rsa-btn--submit" id="btn-submit-review">提交意见</button>
@@ -99,39 +62,8 @@
         </form>
 
         <section class="rsa-history" aria-labelledby="rsa-history-heading">
-          <h3 class="rsa-history__title" id="rsa-history-heading">历史审核</h3>
-          <ol class="rsa-history-list" role="list">
-            <li class="rsa-history-item">
-              <article aria-label="王制片 审核记录">
-                <header class="rsa-history-item__head">
-                  <span class="rsa-avatar rsa-avatar--green" aria-hidden="true">王</span>
-                  <div class="rsa-history-item__meta">
-                    <div class="rsa-history-item__row">
-                      <span class="rsa-history-item__name">王制片</span>
-                      <time class="rsa-history-item__time" datetime="2024-03-08T16:42">2024-03-08 16:42</time>
-                      <span class="rsa-history-item__status rsa-history-item__status--pass">已通过</span>
-                    </div>
-                  </div>
-                </header>
-                <p class="rsa-history-item__body">Scene 01和02整体质量很好，光线运用到位，人物表情自然</p>
-              </article>
-            </li>
-            <li class="rsa-history-item">
-              <article aria-label="李导演 审核记录">
-                <header class="rsa-history-item__head">
-                  <span class="rsa-avatar rsa-avatar--red" aria-hidden="true">李</span>
-                  <div class="rsa-history-item__meta">
-                    <div class="rsa-history-item__row">
-                      <span class="rsa-history-item__name">李导演</span>
-                      <time class="rsa-history-item__time" datetime="2024-03-07T10:15">2024-03-07 10:15</time>
-                      <span class="rsa-history-item__status rsa-history-item__status--reject">驳回</span>
-                    </div>
-                  </div>
-                </header>
-                <p class="rsa-history-item__body">Scene 03光线方向与前一场景不连续，需调整至傍晚暖色调，同时人物站位与剧本描述不符</p>
-              </article>
-            </li>
-          </ol>
+          <h3 class="rsa-history__title" id="rsa-history-heading">当前项目历史审核</h3>
+          <ol class="rsa-history-list" id="review-history-list" role="list"></ol>
         </section>
       </aside>
     </div>

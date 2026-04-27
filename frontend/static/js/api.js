@@ -1,7 +1,7 @@
 /**
  * API client for static pages
  */
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://localhost:8001";
 
 async function apiRequest(url, options = {}) {
   const token = localStorage.getItem("token");

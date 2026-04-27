@@ -39,7 +39,7 @@ cp .env.example .env
 
 5. 启动服务：
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
 默认管理员（启动时自动创建/修复）：
@@ -75,7 +75,7 @@ chmod +x start stop status restart scripts/uvicorn_helpers.sh
 
 默认端口：
 
-- 后端：`8000`
+- 后端：`8001`
 - 前端静态服务：`5500`
 
 ## Gradio 网页创作台（推荐）
@@ -114,4 +114,4 @@ python3 -m http.server 5500
 
 浏览器访问：
 - `http://localhost:5500`
-- 前端默认请求后端 `http://localhost:8000`
+- 前端默认请求后端 `http://localhost:8001`

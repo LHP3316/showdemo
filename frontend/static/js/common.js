@@ -36,8 +36,146 @@
 
   function routeTo(routeName) {
     const base = ROUTES[routeName] || HOME_PAGE;
-    const needsProjectId = ["project", "script", "storyboard", "render", "review", "export"].includes(routeName);
+    const needsProjectId = ["project", "script", "storyboard", "render", "export"].includes(routeName);
     window.location.href = needsProjectId ? withProjectId(base) : base;
+  }
+
+  async function openProjectPickerForRoute(routeName) {
+    const targetRoute = routeName === "render" ? "render" : "project";
+    let items = [];
+    try {
+      // size 最大 100（后端校验 le=100）
+      const res = await api.get("/projects?size=100");
+      const payload = res && res.data ? res.data : {};
+      items = Array.isArray(payload.items) ? payload.items : [];
+    } catch (e) {
+      showInfoDialog("无法加载项目列表，请稍后重试。");
+      return;
+    }
+
+    if (!items.length) {
+      showInfoDialog("暂无项目，请先创建项目后再进入。");
+      return;
+    }
+
+    renderProjectPickerModal(items, targetRoute);
+  }
+
+  function showInfoDialog(message) {
+    // 尽量复用 CommonApp 的提示；没有则 alert
+    if (window.CommonApp && typeof CommonApp.showInfo === "function") {
+      CommonApp.showInfo(String(message || ""), "提示");
+      return;
+    }
+    window.alert(String(message || ""));
+  }
+
+  function renderProjectPickerModal(projects, routeName) {
+    const targetRoute = routeName === "render" ? "render" : "project";
+    const routeLabel = targetRoute === "render" ? "生成队列" : "项目监控";
+    const overlay = document.createElement("div");
+    overlay.className = "static-project-picker";
+    overlay.innerHTML = `
+      <div class="static-project-picker__mask" data-role="mask"></div>
+      <section class="static-project-picker__panel" role="dialog" aria-modal="true" aria-label="选择项目">
+        <header class="static-project-picker__head">
+          <h2 class="static-project-picker__title">选择要进入的${routeLabel}项目</h2>
+          <button type="button" class="static-project-picker__close" data-role="close" aria-label="关闭">×</button>
+        </header>
+        <div class="static-project-picker__search">
+          <input class="static-project-picker__input" type="text" placeholder="搜索项目名称..." data-role="search" />
+        </div>
+        <div class="static-project-picker__list" data-role="list"></div>
+      </section>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = () => {
+      try { document.body.removeChild(overlay); } catch {}
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+    const onKeyDown = (e) => {
+      if (e && e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+
+    overlay.querySelector("[data-role='mask']")?.addEventListener("click", close);
+    overlay.querySelector("[data-role='close']")?.addEventListener("click", close);
+
+    const listNode = overlay.querySelector("[data-role='list']");
+    const input = overlay.querySelector("[data-role='search']");
+
+    const normalized = (projects || []).map((p) => {
+      const id = p && p.id != null ? String(p.id) : "";
+      const title = p && p.title ? String(p.title) : `项目#${id}`;
+      const status = p && p.status ? String(p.status) : "";
+      return { id, title, status };
+    }).filter((p) => p.id);
+
+    const renderList = (q) => {
+      const kw = String(q || "").trim().toLowerCase();
+      const shown = kw
+        ? normalized.filter((p) => p.title.toLowerCase().includes(kw) || p.id.includes(kw))
+        : normalized;
+
+      if (!listNode) return;
+      if (!shown.length) {
+        listNode.innerHTML = `<div class="static-project-picker__empty">未找到匹配项目</div>`;
+        return;
+      }
+
+      listNode.innerHTML = shown.map((p) => {
+        const badge = `<span class="static-project-picker__badge">${escapeHtml(mapProjectStatus(p.status))}</span>`;
+        const rowClass = p.status === "review" ? "is-highlight" : "";
+        return `
+          <button type="button" class="static-project-picker__item ${rowClass}" data-project-id="${escapeAttr(p.id)}">
+            <span class="static-project-picker__name">${escapeHtml(p.title)}</span>
+            ${badge}
+          </button>
+        `;
+      }).join("");
+
+      listNode.querySelectorAll("[data-project-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const pid = btn.getAttribute("data-project-id");
+          if (!pid) return;
+          try { localStorage.setItem("activeProjectId", String(pid)); } catch {}
+          close();
+          const base = ROUTES[targetRoute] || ROUTES.project;
+          window.location.href = `${base}?id=${encodeURIComponent(String(pid))}`;
+        });
+      });
+    };
+
+    renderList("");
+    input?.addEventListener("input", () => renderList(input.value));
+
+    ensureProjectPickerStyles();
+  }
+
+  function ensureProjectPickerStyles() {
+    if (document.getElementById("static-project-picker-style")) return;
+    const style = document.createElement("style");
+    style.id = "static-project-picker-style";
+    style.textContent = `
+      .static-project-picker { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; }
+      .static-project-picker__mask { position: absolute; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); }
+      .static-project-picker__panel { position: relative; width: min(560px, calc(100vw - 28px)); background: rgba(18, 18, 24, 0.96); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; box-shadow: 0 18px 60px rgba(0,0,0,.55); overflow: hidden; }
+      .static-project-picker__head { display:flex; align-items:center; justify-content:space-between; gap: 10px; padding: 14px 14px 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
+      .static-project-picker__title { margin:0; font-size: 14px; font-weight: 800; color: #fff; }
+      .static-project-picker__close { width: 32px; height: 32px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color:#fff; font-size: 18px; cursor: pointer; }
+      .static-project-picker__search { padding: 10px 14px; }
+      .static-project-picker__input { width: 100%; height: 38px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color:#fff; padding: 0 12px; outline: none; }
+      .static-project-picker__list { padding: 0 14px 14px; display: grid; gap: 8px; max-height: 300px; overflow: auto; }
+      .static-project-picker__item { display:flex; align-items:center; justify-content:space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color:#fff; cursor:pointer; text-align:left; }
+      .static-project-picker__item:hover { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.06); }
+      .static-project-picker__item.is-highlight { border-color: rgba(251, 191, 36, .35); background: rgba(251, 191, 36, .08); }
+      .static-project-picker__name { font-size: 13px; font-weight: 700; color:#fff; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .static-project-picker__badge { flex: 0 0 auto; font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(148,163,184,.25); color: rgba(226,232,240,.95); background: rgba(15,23,42,.35); }
+      .static-project-picker__badge.is-review { border-color: rgba(34,197,94,.35); color: rgba(134,239,172,.95); background: rgba(20,83,45,.28); }
+      .static-project-picker__empty { padding: 18px 10px; color: rgba(148,163,184,.9); font-size: 13px; text-align:center; }
+    `;
+    document.head.appendChild(style);
   }
 
   function clearSession() {
@@ -119,21 +257,21 @@
   function bindKnownHeaderActions() {
     // New semantic layout ids
     bindClick("#nav-workspace", () => routeTo("workspace"));
-    bindClick("#nav-project", () => routeTo("project"));
-    bindClick("#nav-render", () => routeTo("render"));
+    bindClick("#nav-project", () => openProjectPickerForRoute("project"));
+    bindClick("#nav-render", () => openProjectPickerForRoute("render"));
     bindClick("#nav-review", () => routeTo("review"));
     bindClick("#btn-logout", () => logout());
 
     // Legacy pixso ids
     bindClick("#2_37", () => routeTo("workspace"));
-    bindClick("#2_39", () => routeTo("project"));
-    bindClick("#2_41", () => routeTo("render"));
+    bindClick("#2_39", () => openProjectPickerForRoute("project"));
+    bindClick("#2_41", () => openProjectPickerForRoute("render"));
     bindClick("#2_43", () => routeTo("review"));
     bindClick("#2_50", () => logout());
     bindClick("#2_180", () => routeTo("project"));
     bindClick("#2_189", () => routeTo("script"));
     bindClick("#2_195", () => routeTo("storyboard"));
-    bindClick("#2_200", () => routeTo("render"));
+    bindClick("#2_200", () => openProjectPickerForRoute("render"));
     bindClick("#2_205", () => routeTo("review"));
     bindClick("#2_210", () => routeTo("export"));
   }
@@ -283,6 +421,17 @@
     if (!isDirector && pageName === "review.html") {
       routeTo("workspace");
     }
+  }
+
+  function mapProjectStatus(status) {
+    const map = {
+      draft: "草稿",
+      processing: "制作中",
+      review: "待审核",
+      approved: "已通过",
+      rejected: "已驳回",
+    };
+    return map[status] || (status || "-");
   }
 
   function injectGlobalFooter() {

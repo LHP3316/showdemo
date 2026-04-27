@@ -181,8 +181,8 @@
       el.addEventListener("click", function () {
         const projectId = el.getAttribute("data-id");
         if (!projectId) return;
-        localStorage.setItem("activeProjectId", String(projectId));
-        window.location.href = `review.html?id=${projectId}`;
+        localStorage.setItem("review_focus_project_id", String(projectId));
+        window.location.href = "review.html";
       });
     });
   }
