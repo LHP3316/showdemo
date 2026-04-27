@@ -3,6 +3,7 @@
 说明: 提供项目资源导出功能（图片、视频打包下载）
 版本: v2.0
 """
+from math import ceil
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,6 +22,8 @@ router = APIRouter(prefix="/export", tags=["导出"])
 async def get_project_assets(
     project_id: int,
     episode: Optional[int] = Query(None, description="集数（可选）"),
+    page: int = Query(1, ge=1, description="页码（从1开始）"),
+    size: int = Query(10, ge=1, le=50, description="每页数量"),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -42,7 +45,7 @@ async def get_project_assets(
     scenes = query.order_by(Scene.episode_number, Scene.scene_index).all()
     
     # 构建资产清单
-    assets = []
+    assets_all = []
     for scene in scenes:
         asset = {
             "scene_id": scene.id,
@@ -53,7 +56,13 @@ async def get_project_assets(
             "video_url": to_public_media_url(scene.video_url),
             "status": scene.status
         }
-        assets.append(asset)
+        assets_all.append(asset)
+
+    total = len(assets_all)
+    start = (page - 1) * size
+    end = start + size
+    items = assets_all[start:end] if start < total else []
+    total_pages = max(1, ceil(total / size)) if size else 1
     
     # 统计
     total_scenes = len(scenes)
@@ -70,7 +79,15 @@ async def get_project_assets(
             "total_scenes": total_scenes,
             "images_count": images_count,
             "videos_count": videos_count,
-            "assets": assets
+            # 分页信息（前端导出中心使用）
+            "page": page,
+            "size": size,
+            "total": total,
+            "total_pages": total_pages,
+            # items 为当前页
+            "items": items,
+            # assets 保持兼容（旧前端使用 a.assets）
+            "assets": items,
         }
     )
 

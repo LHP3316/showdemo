@@ -386,6 +386,17 @@ body {
   align-items: start;
 }
 
+.timeline-item.is-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.timeline-item.is-clickable:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 215, 0, 0.22);
+  background: rgba(255, 255, 255, 0.02);
+}
+
 .timeline-item.is-done {
   border-color: rgba(16, 185, 129, 0.15);
 }

@@ -211,6 +211,7 @@
         : (allProduced ? "done" : (producedCount > 0 || taskTotal > 0 ? "active" : "pending")));
     const reviewState = project.status === "review" ? "active" : (latestReview ? "done" : "pending");
     const exportState = project.status === "approved" ? "active" : (project.status === "exported" ? "done" : "pending");
+    const exportClickable = (project.status === "approved" || project.status === "exported") && !!(currentUser && currentUser.role === "director");
 
     const items = [
       {
@@ -250,6 +251,9 @@
         desc: project.status === "approved" ? "项目已通过审核，可进入导出交付" : "待审核通过后可导出",
         tag: project.status === "approved" ? "可导出" : "待开始",
         state: exportState,
+        key: "export",
+        clickable: exportClickable,
+        hint: exportClickable ? "" : "需审核通过后才能导出",
       },
     ];
 
@@ -258,7 +262,7 @@
     list.innerHTML = items
       .map(
         (it) => `
-        <li class="timeline-item ${it.state === "done" ? "is-done" : it.state === "active" ? "is-active" : ""}">
+        <li class="timeline-item ${it.state === "done" ? "is-done" : it.state === "active" ? "is-active" : ""}${it.clickable ? " is-clickable" : ""}" data-key="${escapeHtml(String(it.key || ""))}" ${it.hint ? `title="${escapeHtml(String(it.hint))}"` : ""}>
           <div class="timeline-dot" aria-hidden="true"></div>
           <div class="timeline-body">
             <h3 class="timeline-item-title">${escapeHtml(it.title)}</h3>
@@ -268,6 +272,16 @@
         </li>`
       )
       .join("");
+
+    const exportNode = list.querySelector('.timeline-item[data-key="export"].is-clickable');
+    if (exportNode) {
+      exportNode.addEventListener("click", function () {
+        const id = getProjectId();
+        if (!id) return;
+        localStorage.setItem("activeProjectId", String(id));
+        window.location.href = `export.html?id=${encodeURIComponent(String(id))}`;
+      });
+    }
   }
 
   function patchFlowSteps(project, ctx) {
