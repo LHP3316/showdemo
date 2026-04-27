@@ -51,7 +51,7 @@
     if (fromCache) return fromCache;
 
     try {
-      const res = await api.get("/projects?size=1");
+      const res = await api.get("/projects/", { size: 1 });
       const first = res && res.data && res.data.items ? res.data.items[0] : null;
       if (first && first.id) {
         const id = String(first.id);

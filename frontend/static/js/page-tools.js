@@ -71,7 +71,7 @@
       localStorage.setItem("activeProjectId", String(id));
       return String(id);
     }
-    const res = await api.get("/projects?size=1");
+    const res = await api.get("/projects/", { size: 1 });
     const first = res && res.data && res.data.items ? res.data.items[0] : null;
     if (first && first.id) {
       localStorage.setItem("activeProjectId", String(first.id));
@@ -100,7 +100,7 @@
   async function renderWorkspacePanel() {
     const [statsRes, projectsRes] = await Promise.all([
       api.get("/projects/stats"),
-      api.get("/projects?size=6"),
+      api.get("/projects/", { size: 6 }),
     ]);
     const stats = (statsRes && statsRes.data) || {};
     const projects = (projectsRes && projectsRes.data && projectsRes.data.items) || [];

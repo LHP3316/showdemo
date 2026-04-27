@@ -127,7 +127,7 @@
       const requests = [
         api.get("/projects/stats"),
         api.get("/api/tasks/tasks?size=100"),
-        api.get("/projects?size=20"),
+        api.get("/projects/", { size: 20 }),
       ];
       if (isDirector()) {
         requests.push(api.get("/api/reviews/pending?size=50"));

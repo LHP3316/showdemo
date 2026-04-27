@@ -45,7 +45,7 @@
     let items = [];
     try {
       // size 最大 100（后端校验 le=100）
-      const res = await api.get("/projects?size=100");
+      const res = await api.get("/projects/", { size: 100 });
       const payload = res && res.data ? res.data : {};
       items = Array.isArray(payload.items) ? payload.items : [];
     } catch (e) {

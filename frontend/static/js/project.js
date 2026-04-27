@@ -35,7 +35,7 @@
     try {
       let id = getProjectId();
       if (!id) {
-        const projectsRes = await api.get("/projects?size=1");
+        const projectsRes = await api.get("/projects/", { size: 1 });
         const first = projectsRes && projectsRes.data && projectsRes.data.items ? projectsRes.data.items[0] : null;
         if (!first || !first.id) {
           return;

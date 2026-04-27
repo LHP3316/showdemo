@@ -62,7 +62,7 @@
     const fromCache = localStorage.getItem("activeProjectId");
     if (fromCache) return fromCache;
 
-    const res = await api.get("/projects?size=1");
+    const res = await api.get("/projects/", { size: 1 });
     const first = res && res.data && res.data.items ? res.data.items[0] : null;
     if (first && first.id) {
       localStorage.setItem("activeProjectId", String(first.id));
