@@ -134,7 +134,7 @@
 
     if (!queue.length) {
       list.innerHTML = `
-        <li class="item-card">
+        <li class="item-card item-card-empty">
           <h3 class="item-title">暂无导演待办</h3>
           <p class="item-subtitle">项目分配与审核任务将在这里显示。</p>
         </li>
@@ -395,7 +395,7 @@
 
   function taskEmptyHtml() {
     return `
-      <li class="item-card">
+      <li class="item-card item-card-empty">
         <h3 class="item-title">暂无任务</h3>
         <p class="item-subtitle">当前没有待处理任务。</p>
       </li>
@@ -404,7 +404,7 @@
 
   function projectEmptyHtml() {
     return `
-      <li class="item-card">
+      <li class="item-card item-card-empty">
         <h3 class="item-title">暂无项目</h3>
         <p class="item-subtitle">点击“新建项目”即可开始创作。</p>
       </li>
