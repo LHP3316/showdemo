@@ -34,6 +34,9 @@ uploads/
 # Local deployment notes
 LINUX_DEPLOY.md
 
+# Generated runtime config (from env)
+frontend/static/config.js
+
 # Local tool folders
 .agents/
 .codex/

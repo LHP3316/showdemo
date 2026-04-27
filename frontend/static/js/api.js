@@ -1,7 +1,9 @@
 /**
  * API client for static pages
  */
-const API_BASE_URL = "http://localhost:8001";
+const API_BASE_URL =
+  (window.__SHOWDEMO_CONFIG__ && window.__SHOWDEMO_CONFIG__.API_BASE_URL) ||
+  "http://localhost:8001";
 
 function resolveApiBaseCandidates() {
   const out = [];

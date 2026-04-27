@@ -125,6 +125,11 @@ start_frontend() {
     return 1
   fi
 
+  # 生成前端运行时配置（从 backend/.env 读取 API_BASE_URL）
+  if [ -f "${ROOT_DIR}/scripts/generate_frontend_config.sh" ]; then
+    bash "${ROOT_DIR}/scripts/generate_frontend_config.sh" >/dev/null 2>&1 || true
+  fi
+
   # 先清理可能占用 5500 端口的旧进程
   echo "正在检查端口 ${FRONTEND_PORT}..."
   local old_pid
