@@ -31,6 +31,9 @@ temp/
 # Uploads (generated media)
 uploads/
 
+# Local deployment notes
+LINUX_DEPLOY.md
+
 # Local tool folders
 .agents/
 .codex/
