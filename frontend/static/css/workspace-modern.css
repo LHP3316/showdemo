@@ -285,6 +285,10 @@ body.workspace-screen #static-global-footer {
   width: 100%;
 }
 
+.ws-pagination[hidden] {
+  display: none !important;
+}
+
 .ws-page-btn {
   height: 32px;
   border-radius: 10px;
