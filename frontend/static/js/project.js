@@ -211,7 +211,7 @@
         : (allProduced ? "done" : (producedCount > 0 || taskTotal > 0 ? "active" : "pending")));
     const reviewState = project.status === "review" ? "active" : (latestReview ? "done" : "pending");
     const exportState = project.status === "approved" ? "active" : (project.status === "exported" ? "done" : "pending");
-    const exportClickable = (project.status === "approved" || project.status === "exported") && !!(currentUser && currentUser.role === "director");
+    const exportClickable = project.status === "approved" || project.status === "exported";
 
     const items = [
       {
@@ -400,9 +400,9 @@
     const canEnterReview = isDirector;
     setBtnState("#btn-go-review", { hidden: !canEnterReview, disabled: false, title: "" });
 
-    // 导出交付：导演可见，且需 approved
-    const canEnterExport = isDirector;
-    setBtnState("#btn-go-export", { hidden: !canEnterExport, disabled: project.status !== "approved", title: project.status === "approved" ? "" : "需审核通过后才能导出" });
+    // 导出交付：导演和工作人员均可见，但必须审核通过后可进入
+    const canEnterExport = true;
+    setBtnState("#btn-go-export", { hidden: !canEnterExport, disabled: !(project.status === "approved" || project.status === "exported"), title: (project.status === "approved" || project.status === "exported") ? "" : "需审核通过后才能导出" });
 
     // 分配按钮：仅导演可见
     const assignBtn = document.querySelector("#btn-assign-staff");

@@ -17,7 +17,6 @@
       </section>
       <nav class="export-hero__actions" aria-label="头部操作">
         <button id="btn-export-package" class="action-btn action-btn--gold" type="button">打包下载全部</button>
-        <button id="btn-share-link" class="action-btn action-btn--ghost" type="button">生成分享链接</button>
       </nav>
     </header>
 
@@ -56,6 +55,11 @@
             </div>
           </div>
         </div>
+        <nav class="export-pagination" aria-label="资产分页">
+          <button id="export-page-prev" class="export-page-btn" type="button">上一页</button>
+          <span id="export-page-info" class="export-page-info">第 1 / 1 页</span>
+          <button id="export-page-next" class="export-page-btn" type="button">下一页</button>
+        </nav>
       </section>
 
       <aside class="stats-panel" aria-label="导出统计">
@@ -66,11 +70,7 @@
           <dl class="stat-list">
             <div class="stat-item">
               <dt>总资产数量</dt>
-              <dd>47 个文件</dd>
-            </div>
-            <div class="stat-item">
-              <dt>总存储大小</dt>
-              <dd class="accent-gold">28.6 GB</dd>
+              <dd id="export-total-assets">0 个文件</dd>
             </div>
             <div class="stat-item">
               <dt>分镜图片</dt>
@@ -90,9 +90,7 @@
         <article class="stat-card">
           <h3 class="stat-card__title">导出格式</h3>
           <div class="format-list" role="group" aria-label="导出格式">
-            <button class="format-chip is-active" type="button">MP4</button>
-            <button class="format-chip" type="button">PNG</button>
-            <button class="format-chip" type="button">ZIP</button>
+            <button class="format-chip is-active" type="button">ZIP</button>
           </div>
         </article>
       </aside>

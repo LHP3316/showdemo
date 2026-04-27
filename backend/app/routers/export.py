@@ -4,6 +4,9 @@
 版本: v2.0
 """
 from math import ceil
+from pathlib import Path
+from time import strftime
+from zipfile import ZIP_DEFLATED, ZipFile
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -16,6 +19,50 @@ from app.deps import get_current_user
 from app.utils.media_urls import to_public_media_url
 
 router = APIRouter(prefix="/export", tags=["导出"])
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+UPLOADS_ROOT = PROJECT_ROOT / "uploads"
+EXPORTS_ROOT = UPLOADS_ROOT / "exports"
+EXPORTS_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+def _local_path_from_upload_url(url: str | None) -> Path | None:
+    text = str(url or "").strip().replace("\\", "/")
+    if not text:
+        return None
+    marker = "/uploads/"
+    idx = text.lower().find(marker)
+    if idx < 0:
+        if text.lower().startswith("uploads/"):
+            text = f"/{text}"
+            idx = text.lower().find(marker)
+    if idx < 0:
+        return None
+    rel = text[idx + 1 :]  # strip leading slash
+    candidate = PROJECT_ROOT / rel
+    return candidate
+
+
+def _iter_scene_media_urls(scene: Scene) -> list[str]:
+    urls: list[str] = []
+    if scene.image_url:
+        urls.append(str(scene.image_url))
+    if isinstance(scene.image_urls, list):
+        for u in scene.image_urls:
+            if u:
+                urls.append(str(u))
+    if scene.video_url:
+        urls.append(str(scene.video_url))
+    # 去重但保持顺序
+    seen = set()
+    out: list[str] = []
+    for u in urls:
+        key = str(u).strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
+    return out
 
 
 @router.get("/project/{project_id}/assets", response_model=ApiResponse, summary="获取项目资产清单")
@@ -92,6 +139,63 @@ async def get_project_assets(
     )
 
 
+@router.post("/project/{project_id}/scene/{scene_id}/package", response_model=ApiResponse, summary="打包下载单个分镜")
+async def package_scene_export(
+    project_id: int,
+    scene_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="项目不存在")
+
+    scene = (
+        db.query(Scene)
+        .filter(Scene.id == scene_id, Scene.project_id == project_id, Scene.is_deleted == 0)
+        .first()
+    )
+    if not scene:
+        raise HTTPException(status_code=404, detail="分镜不存在")
+
+    media_urls = _iter_scene_media_urls(scene)
+    if not media_urls:
+        raise HTTPException(status_code=400, detail="该分镜暂无可导出的图片/视频")
+
+    ts = strftime("%Y%m%d_%H%M%S")
+    zip_name = f"project_{project_id}_scene_{scene_id}_{ts}.zip"
+    zip_path = EXPORTS_ROOT / zip_name
+
+    included = 0
+    with ZipFile(zip_path, "w", compression=ZIP_DEFLATED) as zf:
+        for url in media_urls:
+            local_path = _local_path_from_upload_url(url)
+            if not local_path or not local_path.exists() or not local_path.is_file():
+                continue
+            arcname = f"project_{project_id}/scene_{scene.scene_index:02d}/{local_path.name}"
+            try:
+                zf.write(local_path, arcname=arcname)
+                included += 1
+            except Exception:
+                continue
+
+    if included <= 0:
+        raise HTTPException(status_code=400, detail="未找到可打包的本地资源文件")
+
+    download_url = to_public_media_url(f"/uploads/exports/{zip_name}") or f"/uploads/exports/{zip_name}"
+    return ApiResponse(
+        success=True,
+        message="分镜导出包生成成功",
+        data={
+            "project_id": project_id,
+            "scene_id": scene_id,
+            "scene_index": scene.scene_index,
+            "download_url": download_url,
+            "included_files": included,
+        },
+    )
+
+
 @router.post("/project/{project_id}/package", response_model=ApiResponse, summary="打包导出项目")
 async def package_export(
     project_id: int,
@@ -138,9 +242,29 @@ async def package_export(
         
         export_list.append(item)
     
-    # 这里应该实际生成ZIP文件并上传到对象存储
-    # 简化处理：返回导出清单
-    download_url = f"/api/export/download/{project_id}"  # 模拟下载链接
+    # 生成 ZIP 文件（仅打包本地 /uploads 下存在的资源）
+    ts = strftime("%Y%m%d_%H%M%S")
+    zip_name = f"project_{project_id}_export_{ts}.zip"
+    zip_path = EXPORTS_ROOT / zip_name
+
+    included = 0
+    with ZipFile(zip_path, "w", compression=ZIP_DEFLATED) as zf:
+        for item in export_list:
+            for kind in ("image_url", "video_url"):
+                url = item.get(kind)
+                local_path = _local_path_from_upload_url(url)
+                if not local_path or not local_path.exists() or not local_path.is_file():
+                    continue
+                # 归档路径：exports/project_<id>/images|videos/filename
+                sub = "images" if kind == "image_url" else "videos"
+                arcname = f"project_{project_id}/{sub}/{local_path.name}"
+                try:
+                    zf.write(local_path, arcname=arcname)
+                    included += 1
+                except Exception:
+                    continue
+
+    download_url = to_public_media_url(f"/uploads/exports/{zip_name}") or f"/uploads/exports/{zip_name}"
     
     return ApiResponse(
         success=True,
@@ -150,6 +274,7 @@ async def package_export(
             "project_title": project.title,
             "download_url": download_url,
             "total_items": len(export_list),
+            "included_files": included,
             "include_images": include_images,
             "include_videos": include_videos,
             "export_list": export_list

@@ -198,12 +198,34 @@
     document.querySelectorAll(".rq-card__media img").forEach((img) => {
       if (img.dataset.fallbackBound === "1") return;
       img.dataset.fallbackBound = "1";
+      // 记录初始 src，便于失败后重试（偶发 404/写入未完成/缓存抖动）
+      if (!img.dataset.originSrc) {
+        const cur = String(img.getAttribute("src") || "").trim();
+        if (cur) img.dataset.originSrc = cur;
+      }
       img.addEventListener("error", function () {
         const cur = String(img.getAttribute("src") || "").trim();
+        const origin = String(img.dataset.originSrc || "").trim();
+        const retry = Number(img.dataset.retryCount || "0");
+
+        // 已经是空态图仍失败：隐藏，避免破图占位
         if (cur.endsWith("/static/tu.png") || cur.endsWith("tu.png")) {
           img.style.display = "none";
           return;
         }
+
+        // 对真实图片做有限次重试（加时间戳避免缓存命中）
+        if (origin && retry < 2) {
+          img.dataset.retryCount = String(retry + 1);
+          const sep = origin.includes("?") ? "&" : "?";
+          const next = `${origin}${sep}t=${Date.now()}`;
+          window.setTimeout(() => {
+            img.src = next;
+          }, 500 + retry * 700);
+          return;
+        }
+
+        // 最终回退到空态图
         img.src = "tu.png";
       });
     });

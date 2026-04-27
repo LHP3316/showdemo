@@ -6,7 +6,6 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -344,11 +343,24 @@ async def decompose_project(
 
     if not project.script:
         raise HTTPException(status_code=400, detail="项目尚未填写剧本")
+
+    # 强约束：一旦项目已产出图片/视频资产，禁止二次 AI 分镜（导演与工作人员均不可）
+    active_scenes = db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0).all()
+
+    def _scene_has_assets(scene: Scene) -> bool:
+        image = (scene.image_url or "").strip() if scene.image_url else ""
+        video = (scene.video_url or "").strip() if scene.video_url else ""
+        image_urls = scene.image_urls if isinstance(scene.image_urls, list) else []
+        has_multi_images = any(str(url or "").strip() for url in image_urls)
+        return bool(image or video or has_multi_images)
+
+    if any(_scene_has_assets(scene) for scene in active_scenes):
+        raise HTTPException(status_code=400, detail="项目已产出图片或视频资产，禁止二次AI分镜")
     
-    # 软删除现有分镜（保留历史资产/追溯信息）
-    db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0).update(
-        {"is_deleted": 1, "deleted_at": func.now()},
-        synchronize_session=False,
+    # 这里允许“无资产状态下”的重复 AI 分镜，需清空旧分镜避免唯一索引冲突：
+    # scenes.uk_project_scene(project_id, episode_number, scene_index)
+    db.query(Scene).filter(Scene.project_id == project_id, Scene.is_deleted == 0).delete(
+        synchronize_session=False
     )
     
     # AI拆解

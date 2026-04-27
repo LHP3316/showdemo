@@ -8,10 +8,19 @@
   let createProjectModalNode = null;
   let dashboardLoading = false;
   let createProjectSubmitting = false;
+  let directorTaskPage = 1;
+  let directorProjectPage = 1;
+  const DIRECTOR_TASK_PAGE_SIZE = 6;
+  const DIRECTOR_PROJECT_PAGE_SIZE = 8;
+  let staffTaskPage = 1;
+  let staffProjectPage = 1;
+  const STAFF_TASK_PAGE_SIZE = 4;
+  const STAFF_PROJECT_PAGE_SIZE = 8;
 
   document.addEventListener("DOMContentLoaded", async function () {
     document.body.classList.add("workspace-screen");
     bindActions();
+    bindWorkspacePagers();
 
     if (SNAPSHOT_MODE) {
       renderSnapshotFallback();
@@ -39,6 +48,56 @@
     bindActions();
     await loadDashboard();
   });
+
+  function bindWorkspacePagers() {
+    const taskPrev = document.querySelector("#ws-task-prev");
+    const taskNext = document.querySelector("#ws-task-next");
+    const projPrev = document.querySelector("#ws-project-prev");
+    const projNext = document.querySelector("#ws-project-next");
+
+    if (taskPrev && taskPrev.dataset.boundClick !== "1") {
+      taskPrev.dataset.boundClick = "1";
+      taskPrev.addEventListener("click", function () {
+        if (isDirector()) {
+          if (directorTaskPage <= 1) return;
+          directorTaskPage -= 1;
+        } else {
+          if (staffTaskPage <= 1) return;
+          staffTaskPage -= 1;
+        }
+        loadDashboard();
+      });
+    }
+    if (taskNext && taskNext.dataset.boundClick !== "1") {
+      taskNext.dataset.boundClick = "1";
+      taskNext.addEventListener("click", function () {
+        if (isDirector()) directorTaskPage += 1;
+        else staffTaskPage += 1;
+        loadDashboard();
+      });
+    }
+    if (projPrev && projPrev.dataset.boundClick !== "1") {
+      projPrev.dataset.boundClick = "1";
+      projPrev.addEventListener("click", function () {
+        if (isDirector()) {
+          if (directorProjectPage <= 1) return;
+          directorProjectPage -= 1;
+        } else {
+          if (staffProjectPage <= 1) return;
+          staffProjectPage -= 1;
+        }
+        loadDashboard();
+      });
+    }
+    if (projNext && projNext.dataset.boundClick !== "1") {
+      projNext.dataset.boundClick = "1";
+      projNext.addEventListener("click", function () {
+        if (isDirector()) directorProjectPage += 1;
+        else staffProjectPage += 1;
+        loadDashboard();
+      });
+    }
+  }
 
   function bindActions() {
     bindClick("#btn-refresh", function () {
@@ -139,10 +198,17 @@
           <p class="item-subtitle">项目分配与审核任务将在这里显示。</p>
         </li>
       `;
+      updateDirectorTaskPagination(0);
       return;
     }
 
-    list.innerHTML = queue.slice(0, 6).map((item) => {
+    const total = queue.length;
+    const totalPages = Math.max(1, Math.ceil(total / DIRECTOR_TASK_PAGE_SIZE));
+    if (directorTaskPage > totalPages) directorTaskPage = totalPages;
+    const start = (directorTaskPage - 1) * DIRECTOR_TASK_PAGE_SIZE;
+    const pageItems = queue.slice(start, start + DIRECTOR_TASK_PAGE_SIZE);
+
+    list.innerHTML = pageItems.map((item) => {
       if (item.type === "assign") {
         const p = item.project;
         return `
@@ -168,6 +234,7 @@
         </li>
       `;
     }).join("");
+    updateDirectorTaskPagination(total);
 
     list.querySelectorAll(".data-assign-project").forEach((el) => {
       el.addEventListener("click", function () {
@@ -185,6 +252,18 @@
         window.location.href = `review-workbench.html?id=${encodeURIComponent(String(projectId))}`;
       });
     });
+  }
+
+  function updateDirectorTaskPagination(total) {
+    const pager = document.querySelector('nav[aria-label="待办分页"]');
+    const info = document.querySelector("#ws-task-info");
+    const prev = document.querySelector("#ws-task-prev");
+    const next = document.querySelector("#ws-task-next");
+    const totalPages = Math.max(1, Math.ceil((Number(total) || 0) / DIRECTOR_TASK_PAGE_SIZE));
+    if (pager) pager.hidden = totalPages <= 1;
+    if (info) info.textContent = `第 ${directorTaskPage} / ${totalPages} 页`;
+    if (prev) prev.disabled = directorTaskPage <= 1;
+    if (next) next.disabled = directorTaskPage >= totalPages;
   }
 
   function patchWelcome(totalProjects) {
@@ -208,10 +287,17 @@
 
     if (!merged.length) {
       list.innerHTML = taskEmptyHtml();
+      updateStaffTaskPagination(0);
       return;
     }
 
-    list.innerHTML = merged.slice(0, 4).map((t) => {
+    const total = merged.length;
+    const totalPages = Math.max(1, Math.ceil(total / STAFF_TASK_PAGE_SIZE));
+    if (staffTaskPage > totalPages) staffTaskPage = totalPages;
+    const start = (staffTaskPage - 1) * STAFF_TASK_PAGE_SIZE;
+    const pageItems = merged.slice(start, start + STAFF_TASK_PAGE_SIZE);
+
+    list.innerHTML = pageItems.map((t) => {
       const isProjectTask = t.__kind === "project";
       const sceneText = isProjectTask
         ? `项目任务：${escapeHtml(t.task_type || "项目执行")} · 状态 ${escapeHtml(mapProjectStatus(t.project_status || "processing"))}`
@@ -232,6 +318,7 @@
         </li>
       `;
     }).join("");
+    updateStaffTaskPagination(total);
 
     list.querySelectorAll(".data-enter-task").forEach((el) => {
       el.addEventListener("click", function () {
@@ -242,6 +329,18 @@
         safeRouteTo(route);
       });
     });
+  }
+
+  function updateStaffTaskPagination(total) {
+    const pager = document.querySelector('nav[aria-label="待办分页"]');
+    const info = document.querySelector("#ws-task-info");
+    const prev = document.querySelector("#ws-task-prev");
+    const next = document.querySelector("#ws-task-next");
+    const totalPages = Math.max(1, Math.ceil((Number(total) || 0) / STAFF_TASK_PAGE_SIZE));
+    if (pager) pager.hidden = totalPages <= 1;
+    if (info) info.textContent = `第 ${staffTaskPage} / ${totalPages} 页`;
+    if (prev) prev.disabled = staffTaskPage <= 1;
+    if (next) next.disabled = staffTaskPage >= totalPages;
   }
 
   function buildProjectLevelTasks(projects) {
@@ -266,12 +365,20 @@
     if (!list) return;
     if (!projects.length) {
       list.innerHTML = projectEmptyHtml();
+      updateDirectorProjectPagination(0);
       return;
     }
 
-    list.innerHTML = projects.slice(0, 8).map((p) => {
+    const total = projects.length;
+    const totalPages = Math.max(1, Math.ceil(total / DIRECTOR_PROJECT_PAGE_SIZE));
+    if (directorProjectPage > totalPages) directorProjectPage = totalPages;
+    const start = (directorProjectPage - 1) * DIRECTOR_PROJECT_PAGE_SIZE;
+    const pageItems = projects.slice(start, start + DIRECTOR_PROJECT_PAGE_SIZE);
+
+    list.innerHTML = pageItems.map((p) => {
       const coverUrl = getProjectCoverUrl(p);
       const assignedText = p.assigned_to ? `已分配 #${p.assigned_to}` : "未分配";
+      const done = p && (p.status === "approved" || p.status === "exported");
       return `
         <li class="item-card item-card-project" data-id="${p.id}">
           <span class="project-icon" aria-hidden="true">
@@ -283,12 +390,13 @@
           </div>
           <div class="item-foot">
             <span class="pill">${escapeHtml(mapProjectStatus(p.status))}</span>
-            <button class="link-btn data-assign-project" data-id="${p.id}" type="button">分配</button>
+            ${done ? "" : `<button class="link-btn data-assign-project" data-id="${p.id}" type="button">分配</button>`}
             <button class="link-btn data-open-project" data-id="${p.id}" type="button">打开</button>
           </div>
         </li>
       `;
     }).join("");
+    updateDirectorProjectPagination(total);
 
     list.querySelectorAll(".data-open-project").forEach((el) => {
       el.addEventListener("click", function () {
@@ -308,6 +416,18 @@
     });
   }
 
+  function updateDirectorProjectPagination(total) {
+    const pager = document.querySelector('nav[aria-label="项目分页"]');
+    const info = document.querySelector("#ws-project-info");
+    const prev = document.querySelector("#ws-project-prev");
+    const next = document.querySelector("#ws-project-next");
+    const totalPages = Math.max(1, Math.ceil((Number(total) || 0) / DIRECTOR_PROJECT_PAGE_SIZE));
+    if (pager) pager.hidden = totalPages <= 1;
+    if (info) info.textContent = `第 ${directorProjectPage} / ${totalPages} 页`;
+    if (prev) prev.disabled = directorProjectPage <= 1;
+    if (next) next.disabled = directorProjectPage >= totalPages;
+  }
+
   function patchStaffProjectList(projects) {
     const list = document.querySelector("#recent-project-list");
     if (!list) return;
@@ -319,10 +439,17 @@
           <p class="item-subtitle">导演分配后，你的作品会出现在这里。</p>
         </li>
       `;
+      updateStaffProjectPagination(0);
       return;
     }
 
-    list.innerHTML = projects.slice(0, 8).map((p) => {
+    const total = projects.length;
+    const totalPages = Math.max(1, Math.ceil(total / STAFF_PROJECT_PAGE_SIZE));
+    if (staffProjectPage > totalPages) staffProjectPage = totalPages;
+    const start = (staffProjectPage - 1) * STAFF_PROJECT_PAGE_SIZE;
+    const pageItems = projects.slice(start, start + STAFF_PROJECT_PAGE_SIZE);
+
+    list.innerHTML = pageItems.map((p) => {
       const coverUrl = getProjectCoverUrl(p);
       return `
         <li class="item-card item-card-project data-open-project" data-id="${p.id}">
@@ -340,6 +467,7 @@
         </li>
       `;
     }).join("");
+    updateStaffProjectPagination(total);
 
     list.querySelectorAll(".data-open-project").forEach((el) => {
       el.style.cursor = "pointer";
@@ -350,6 +478,18 @@
         window.location.href = `project.html?id=${projectId}`;
       });
     });
+  }
+
+  function updateStaffProjectPagination(total) {
+    const pager = document.querySelector('nav[aria-label="项目分页"]');
+    const info = document.querySelector("#ws-project-info");
+    const prev = document.querySelector("#ws-project-prev");
+    const next = document.querySelector("#ws-project-next");
+    const totalPages = Math.max(1, Math.ceil((Number(total) || 0) / STAFF_PROJECT_PAGE_SIZE));
+    if (pager) pager.hidden = totalPages <= 1;
+    if (info) info.textContent = `第 ${staffProjectPage} / ${totalPages} 页`;
+    if (prev) prev.disabled = staffProjectPage <= 1;
+    if (next) next.disabled = staffProjectPage >= totalPages;
   }
 
   async function assignProjectFlow(projectId) {

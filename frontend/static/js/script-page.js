@@ -185,7 +185,10 @@
     try {
       decomposeSubmitting = true;
       // 先自动保存草稿（不弹“已保存”，避免打断流程）
-      await saveScriptSilently();
+      // 工作人员通常无剧本编辑权限，跳过自动保存以避免触发 403 阻断 AI 分镜。
+      if (canEditScriptNow()) {
+        await saveScriptSilently();
+      }
 
       const progress = openProgress("AI分镜中", "正在自动保存草稿并调用大模型拆解分镜。\n耗时取决于文本长度与模型响应速度，请稍候…");
       progress.setPercent(18);
@@ -328,13 +331,21 @@
     }
   }
 
+  function canEditScriptNow() {
+    const role = currentUser && currentUser.role ? currentUser.role : "";
+    const locked = isScriptStageLocked();
+    return (role === "director" || role === "writer") && !locked;
+  }
+
   function isScriptStageLocked() {
     const p = currentProject || {};
     const scenes = Array.isArray(p.scenes) ? p.scenes : [];
     const hasProducedAssets = scenes.some((s) => {
       const image = String((s && s.image_url) || "").trim();
       const video = String((s && s.video_url) || "").trim();
-      return !!(image || video);
+      const imageUrls = Array.isArray(s && s.image_urls) ? s.image_urls : [];
+      const hasMultiImages = imageUrls.some((u) => String(u || "").trim());
+      return !!(image || video || hasMultiImages);
     });
     return hasProducedAssets;
   }
