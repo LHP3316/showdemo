@@ -323,10 +323,12 @@
     }
 
     list.innerHTML = projects.slice(0, 8).map((p) => {
-      const iconClass = `icon-${getIconSeed(String(p.id || ""))}`;
+      const coverUrl = getProjectCoverUrl(p);
       return `
         <li class="item-card item-card-project data-open-project" data-id="${p.id}">
-          <span class="project-icon ${iconClass}" aria-hidden="true"></span>
+          <span class="project-icon" aria-hidden="true">
+            <img class="project-icon__img ${coverUrl ? "" : "is-fallback"}" src="${escapeHtml(coverUrl || "tu.png")}" alt="项目封面">
+          </span>
           <div class="project-main">
             <h3 class="item-title">${escapeHtml(p.title || "未命名项目")}</h3>
             <p class="item-subtitle">${escapeHtml(p.genre || "未分类")} · ${p.episode_count || 0}集 · ${escapeHtml(mapProjectStatus(p.status))}</p>
