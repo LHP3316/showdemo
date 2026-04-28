@@ -56,28 +56,18 @@ class GeeknowService:
         self._ensure_api_key()
         cfg = config or {}
         video_size = self._normalize_video_size(cfg.get("size", "1280x720"))
-        resolved_image_ref = self._resolve_input_reference(image_url)
-        if not resolved_image_ref:
+        image_file = await asyncio.to_thread(self._build_video_input_file, image_url)
+        if not image_file:
             raise RuntimeError("图生视频缺少有效输入图，请先为当前镜头生成图片")
+        model = str(cfg.get("model") or "grok-video-3").strip() or "grok-video-3"
         payload = {
-            "model": cfg.get("model", "wan2.6-i2v"),
-            "prompt": prompt or "cinematic movement",
-            "seconds": str(cfg.get("seconds", 5)),
+            "model": model,
+            "prompt": str(prompt or "cinematic movement").strip() or "cinematic movement",
+            "seconds": str(self._normalize_grok_seconds(model, cfg.get("seconds", 6))),
             "size": video_size,
-            # 新网关对 wan2.6-i2v 要求 input.img_url
-            "input": {
-                "img_url": resolved_image_ref,
-            },
-            # 兼容旧通道：保留历史字段
-            "input_reference": [resolved_image_ref],
-            "metadata": {
-                "output_config": {
-                    "aspect_ratio": cfg.get("aspect_ratio", "16:9"),
-                    "audio_generation": cfg.get("audio_generation", "Disabled"),
-                }
-            },
+            "aspect_ratio": self._normalize_grok_aspect_ratio(cfg.get("aspect_ratio", "3:2")),
         }
-        create = await self._post_json("/v1/videos", payload)
+        create = await asyncio.to_thread(self._create_video_task_multipart, payload, image_file)
         task_id = self._extract_task_id(create)
         if not task_id:
             raise RuntimeError(f"创建视频任务失败，缺少任务ID: {create}")
@@ -326,10 +316,51 @@ class GeeknowService:
             return ""
         return text
 
+    def _build_video_input_file(self, image_url: str) -> tuple[str, bytes, str] | None:
+        text = str(image_url or "").strip()
+        if not text:
+            return None
+        if text.startswith("/uploads/"):
+            local_path = self.project_root / text.lstrip("/")
+            if not local_path.exists():
+                return None
+            mime = mimetypes.guess_type(local_path.name)[0] or "image/png"
+            return (local_path.name, local_path.read_bytes(), mime)
+        if text.startswith(("http://", "https://")):
+            resp = self.session.get(text, timeout=(30, 240))
+            if resp.status_code != 200:
+                raise RuntimeError(f"下载参考图失败: HTTP {resp.status_code}")
+            suffix = self._guess_suffix_from_url(text, "png")
+            mime = resp.headers.get("Content-Type") or f"image/{suffix}"
+            return (f"input_reference.{suffix}", resp.content, mime)
+        if text.startswith("data:") and ";base64," in text:
+            header, encoded = text.split(",", 1)
+            mime = header[5:].split(";", 1)[0] or "image/png"
+            suffix = mime.split("/", 1)[-1] or "png"
+            return (f"input_reference.{suffix}", base64.b64decode(encoded), mime)
+        return None
+
+    def _create_video_task_multipart(self, payload: dict[str, Any], image_file: tuple[str, bytes, str]) -> dict[str, Any]:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        filename, file_bytes, mime = image_file
+        files = [
+            ("input_reference", (filename, file_bytes, mime)),
+        ]
+        url = f"{self.base_url}/v1/videos"
+        resp = requests.request("POST", url, headers=headers, data=payload, files=files, timeout=(30, 240))
+        if resp.status_code != 200:
+            raise RuntimeError(f"GeekNow HTTP {resp.status_code}: {resp.text}")
+        data = resp.json() if resp.text else {}
+        if not isinstance(data, dict):
+            raise RuntimeError(f"GeekNow 返回异常: {data}")
+        return data
+
     @staticmethod
     def _normalize_video_size(raw_size: Any) -> str:
         """
-        wan2.6-i2v 仅支持 720P/1080P。
+        grok-video-3 仅支持 720P/1080P。
         兼容旧配置中的 1280x720/1920x1080/720p/1080p 等写法。
         """
         text = str(raw_size or "").strip().upper()
@@ -347,6 +378,19 @@ class GeeknowService:
         if text == "1080":
             return "1080P"
         return "720P"
+
+    @staticmethod
+    def _normalize_grok_aspect_ratio(raw_ratio: Any) -> str:
+        text = str(raw_ratio or "").strip()
+        if text in {"2:3", "3:2", "1:1"}:
+            return text
+        return "3:2"
+
+    @staticmethod
+    def _normalize_grok_seconds(model: str, raw_seconds: Any) -> int:
+        if str(model or "").strip().lower() == "grok-video-3-pro":
+            return 10
+        return 6
 
     @staticmethod
     def _normalize_text_video_size(raw_size: Any) -> str:

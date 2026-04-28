@@ -4,7 +4,7 @@
 (function () {
   const EMPTY_PREVIEW_CANDIDATES = ["tu.png", "/static/tu.png"];
   const FIXED_IMAGE_MODEL = "gpt-image-2";
-  const FIXED_VIDEO_MODEL = "wan2.6-t2v";
+  const FIXED_VIDEO_MODEL = "grok-video-3";
   let emptyPreviewImageUrl = "tu.png";
   let previewRequestId = 0;
   let activeMediaTab = "image";
@@ -396,6 +396,12 @@
   async function generateVideo(sceneId) {
     if (!sceneId || !projectId) return;
     if (isGenerating) return;
+    const scene = scenes.find((s) => String(s.id) === String(sceneId));
+    const sourceImage = resolveScenePrimaryImage(scene);
+    if (!sourceImage) {
+      showToast("请先为当前分镜生成图片，再生成视频", "error");
+      return;
+    }
     try {
       isGenerating = true;
       beginTaskLoading("video", "已提交生视频请求，准备处理中…");
@@ -404,7 +410,6 @@
       const res = await api.post(`/api/scenes/${sceneId}/generate-video`);
       updateTaskProgress("视频已生成，正在加载预览…");
       const payload = (res && res.data) || {};
-      const scene = scenes.find((s) => String(s.id) === String(sceneId));
       if (scene && payload.video_url) {
         scene.video_url = String(payload.video_url);
       }
@@ -609,9 +614,9 @@
   function collectVideoConfig() {
     return {
       model: FIXED_VIDEO_MODEL,
-      seconds: clampInt(valueOf("#vid-seconds"), 4, 15, 5),
+      seconds: 6,
       size: normalizeVideoSize(valueOf("#vid-size") || "720P"),
-      aspect_ratio: valueOf("#vid-aspect") || "16:9",
+      aspect_ratio: normalizeVideoAspectRatio(valueOf("#vid-aspect") || "3:2"),
     };
   }
 
@@ -638,9 +643,9 @@
     const cfg = (config && typeof config === "object") ? config : {};
     return {
       model: FIXED_VIDEO_MODEL,
-      seconds: clampInt(cfg.seconds, 4, 15, 5),
+      seconds: 6,
       size: normalizeVideoSize(cfg.size || "720P"),
-      aspect_ratio: String(cfg.aspect_ratio || "16:9"),
+      aspect_ratio: normalizeVideoAspectRatio(cfg.aspect_ratio || "3:2"),
     };
   }
 
@@ -648,6 +653,21 @@
     const text = String(value || "").trim().toUpperCase();
     if (text === "1920X1080" || text === "1080P" || text === "1080") return "1080P";
     return "720P";
+  }
+
+  function normalizeVideoAspectRatio(value) {
+    const text = String(value || "").trim();
+    if (text === "2:3" || text === "3:2" || text === "1:1") return text;
+    return "3:2";
+  }
+
+  function resolveScenePrimaryImage(scene) {
+    if (!scene || typeof scene !== "object") return "";
+    if (scene.image_url) return String(scene.image_url);
+    if (Array.isArray(scene.image_urls) && scene.image_urls.length) {
+      return String(scene.image_urls[0] || "");
+    }
+    return "";
   }
 
   function normalizeImageList(value) {

@@ -17,13 +17,6 @@ from app.services.geeknow_service import geeknow_service
 from app.utils.media_urls import to_public_media_url, normalize_media_url_list
 
 router = APIRouter()
-
-
-def _is_text_to_video_model(model_name: str | None) -> bool:
-    name = str(model_name or "").strip().lower()
-    return "t2v" in name
-
-
 def _get_scene_or_404(scene_id: int, db: Session) -> Scene:
     """获取分镜或返回404"""
     scene = db.query(Scene).filter(Scene.id == scene_id, Scene.is_deleted == 0).first()
@@ -251,8 +244,8 @@ async def generate_video(
 ):
     """
     使用AI生成分镜视频
-    - 有图时走图生视频
-    - 无图时自动走文生视频
+    - 仅支持图生视频
+    - 无图时直接报错
     - 生成成功后自动更新 video_url
     """
     scene = _get_scene_or_404(scene_id, db)
@@ -261,6 +254,8 @@ async def generate_video(
     source_image = (scene.image_url or "").strip()
     if not source_image and isinstance(scene.image_urls, list) and scene.image_urls:
         source_image = str(scene.image_urls[0] or "").strip()
+    if not source_image:
+        raise HTTPException(status_code=400, detail="请先为当前分镜生成图片，再生成视频")
 
     try:
         # 提示词优先级：video_prompt > prompt > scene_description
@@ -268,16 +263,7 @@ async def generate_video(
         if not vprompt:
             vprompt = scene.scene_description or ""
 
-        cfg = scene.video_config or {}
-        requested_model = ""
-        if isinstance(cfg, dict):
-            requested_model = str(cfg.get("model") or "")
-
-        # 模型是 t2v 时强制走文生视频；否则有图走图生
-        if source_image and not _is_text_to_video_model(requested_model):
-            video_url = await geeknow_service.image_to_video(source_image, vprompt, config=scene.video_config or None)
-        else:
-            video_url = await geeknow_service.text_to_video(vprompt, config=scene.video_config or None)
+        video_url = await geeknow_service.image_to_video(source_image, vprompt, config=scene.video_config or None)
 
         # 更新分镜
         scene.video_url = video_url
@@ -346,7 +332,7 @@ async def batch_generate_videos(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """批量生成项目所有分镜的视频（无图时自动文生视频）"""
+    """批量生成项目所有分镜的视频（仅图生视频，无图则跳过）"""
     scenes = db.query(Scene).filter(
         Scene.project_id == project_id,
         Scene.is_deleted == 0,
@@ -361,15 +347,11 @@ async def batch_generate_videos(
             source_image = (scene.image_url or "").strip()
             if not source_image and isinstance(scene.image_urls, list) and scene.image_urls:
                 source_image = str(scene.image_urls[0] or "").strip()
+            if not source_image:
+                failed_count += 1
+                continue
             vprompt = scene.video_prompt or scene.prompt or scene.scene_description or ""
-            cfg = scene.video_config or {}
-            requested_model = ""
-            if isinstance(cfg, dict):
-                requested_model = str(cfg.get("model") or "")
-            if source_image and not _is_text_to_video_model(requested_model):
-                video_url = await geeknow_service.image_to_video(source_image, vprompt, config=scene.video_config or None)
-            else:
-                video_url = await geeknow_service.text_to_video(vprompt, config=scene.video_config or None)
+            video_url = await geeknow_service.image_to_video(source_image, vprompt, config=scene.video_config or None)
             scene.video_url = video_url
             scene.status = "video_ready"
             success_count += 1
